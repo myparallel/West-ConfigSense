@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>ConfigSense 灵配智控 · APP</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; font-size:15px; background:#f0f5fe; color:#1a2a3a; overflow:hidden; height:100dvh; }
+.app { height:100dvh; display:flex; flex-direction:column; max-width:480px; margin:0 auto; position:relative; background:#f0f5fe; }
+.header { background:#fff; padding:8px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e4e9f2; flex-shrink:0; }
+.header .left { display:flex; align-items:center; gap:8px; }
+.header .left img { height:28px; width:auto; display:block; }
+.header .left .app-name { font-size:13px; font-weight:600; color:#0288d1; }
+.header .right { display:flex; align-items:center; gap:6px; font-size:11px; color:#90a4ae; }
+.header .right .ind-tag { font-size:11px; padding:2px 10px; border-radius:12px; background:#e3f2fd; color:#0288d1; cursor:pointer; font-weight:500; }
+.pages { flex:1; overflow:hidden; position:relative; }
+.page { position:absolute; top:0; left:0; width:100%; height:100%; overflow-y:auto; background:#f0f5fe; opacity:0; pointer-events:none; transition:opacity .2s; padding:8px 10px; -webkit-overflow-scrolling:touch; }
+.page.active { opacity:1; pointer-events:auto; }
+.page::-webkit-scrollbar { width:2px; }
+.page::-webkit-scrollbar-thumb { background:#cfd8dc; border-radius:2px; }
+.tab-bar { display:flex; background:#fff; border-top:1px solid #e4e9f2; flex-shrink:0; padding:4px 0 env(safe-area-inset-bottom,4px); }
+.tab-item { flex:1; text-align:center; padding:6px 0 4px; cursor:pointer; min-height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.tab-item .t-icon { font-size:20px; color:#90a4ae; line-height:1; }
+.tab-item .t-label { font-size:9px; color:#90a4ae; margin-top:1px; letter-spacing:.3px; }
+.tab-item.active .t-icon { color:#0288d1; }
+.tab-item.active .t-label { color:#0288d1; font-weight:600; }
+
+/* Home greeting */
+.greeting { margin-bottom:8px; display:flex; align-items:center; justify-content:space-between; }
+.greeting .name { font-size:16px; font-weight:600; color:#1a2a3a; }
+.greeting .name small { font-weight:400; color:#90a4ae; font-size:11px; }
+.greeting .avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#29b6f6,#01579b); display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; flex-shrink:0; }
+
+.sec-title { font-size:12px; font-weight:600; color:#546e7a; margin-bottom:5px; display:flex; align-items:center; gap:4px; }
+.sec-title .badge { font-size:9px; color:#90a4ae; font-weight:400; }
+
+.loc-strip { display:flex; gap:4px; margin-bottom:7px; overflow-x:auto; padding-bottom:2px; }
+.loc-strip::-webkit-scrollbar { height:2px; }
+.loc-strip::-webkit-scrollbar-thumb { background:#cfd8dc; border-radius:1px; }
+.loc-chip { padding:4px 10px; background:#fff; border:1px solid #e4e9f2; border-radius:12px; font-size:11px; color:#607d8b; white-space:nowrap; cursor:pointer; flex-shrink:0; }
+.loc-chip.active { background:#e3f2fd; border-color:#29b6f6; color:#01579b; font-weight:600; }
+
+.summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-bottom:6px; }
+.s-card { background:#fff; border:1px solid #e4e9f2; border-radius:7px; padding:6px 2px; text-align:center; cursor:pointer; }
+.s-card:active { transform:scale(.96); }
+.s-card .s-label { font-size:8px; color:#90a4ae; }
+.s-card .s-value { font-size:15px; font-weight:700; font-family:monospace; margin:1px 0; }
+.s-card .s-sub { font-size:7px; color:#b0bec5; }
+
+.param-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:5px; margin-bottom:7px; }
+.m-param { background:#fff; border:1px solid #e4e9f2; border-radius:8px; padding:8px 6px; text-align:center; cursor:pointer; position:relative; overflow:hidden; }
+.m-param:active { transform:scale(.97); }
+.m-param .mp-bar { position:absolute; top:0; left:0; right:0; height:2px; }
+.m-param .mp-label { font-size:9px; color:#90a4ae; }
+.m-param .mp-value { font-size:18px; font-weight:700; font-family:monospace; margin:2px 0 1px; }
+.m-param .mp-unit { font-size:8px; color:#90a4ae; }
+.m-param .mp-status { font-size:8px; display:inline-flex; padding:1px 6px; border-radius:6px; margin-top:1px; }
+.m-param .mp-status.ok { background:#e8f5e9; color:#4caf50; }
+.m-param .mp-status.warn { background:#fff3e0; color:#ff9800; }
+.m-param .mp-status.crit { background:#ffebee; color:#f44336; }
+
+.mini-chart { background:#fff; border:1px solid #e4e9f2; border-radius:8px; padding:8px; margin-bottom:7px; }
+.mini-chart canvas { width:100%!important; height:50px!important; }
+
+.device-strip { display:flex; gap:4px; margin-bottom:6px; overflow-x:auto; padding-bottom:2px; }
+.dev-strip-item { background:#fff; border:1px solid #e4e9f2; border-radius:7px; padding:6px 8px; min-width:80px; text-align:center; cursor:pointer; flex-shrink:0; }
+.dev-strip-item:active { background:#f5faff; }
+.dev-strip-item .ds-name { font-size:9px; color:#37474f; white-space:nowrap; }
+.dev-strip-item .ds-status { font-size:8px; margin-top:2px; padding:1px 6px; border-radius:4px; display:inline-block; }
+.dev-strip-item .ds-status.on { background:#e8f5e9; color:#4caf50; }
+.dev-strip-item .ds-status.off { background:#f5f5f5; color:#9e9e9e; }
+
+.quick-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-bottom:6px; }
+.q-item { background:#fff; border:1px solid #e4e9f2; border-radius:7px; padding:6px 2px; text-align:center; cursor:pointer; }
+.q-item:active { transform:scale(.96); }
+.q-item .q-icon { font-size:18px; }
+.q-item .q-label { font-size:8px; color:#607d8b; margin-top:1px; }
+
+/* Overlay */
+.overlay { position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:100%; max-width:480px; background:#fff; border-top:1px solid #e4e9f2; border-radius:14px 14px 0 0; padding:10px 14px 16px; transition:transform .35s; z-index:20; max-height:70vh; overflow-y:auto; box-shadow:0 -4px 30px rgba(0,0,0,.08); }
+.overlay.open { transform:translateX(-50%) translateY(0); }
+.overlay .handle { width:30px; height:4px; background:#e4e9f2; border-radius:2px; margin:0 auto 8px; }
+.overlay .o-title { font-size:13px; color:#37474f; margin-bottom:6px; }
+.overlay .o-close { position:absolute; top:8px; right:10px; color:#90a4ae; font-size:14px; cursor:pointer; padding:4px; }
+
+/* Alarm list */
+.alarm-list { display:flex; flex-direction:column; gap:4px; }
+.alarm-item { background:#fff; border:1px solid #e4e9f2; border-radius:7px; padding:7px 10px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
+.alarm-item:active { background:#f5faff; }
+.alarm-item .a-left { display:flex; align-items:center; gap:6px; }
+.alarm-item .a-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.alarm-item .a-dot.p0 { background:#f44336; }
+.alarm-item .a-dot.p1 { background:#ff9800; }
+.alarm-item .a-name { font-size:11px; color:#37474f; }
+.alarm-item .a-desc { font-size:9px; color:#90a4ae; }
+.alarm-item .a-badge { font-size:8px; padding:1px 6px; border-radius:4px; }
+.alarm-item .a-badge.pending { background:#ffebee; color:#f44336; }
+.alarm-item .a-badge.resolved { background:#e8f5e9; color:#4caf50; }
+
+/* Ctrl panels */
+.ctrl-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:7px; }
+.ctrl-item { background:#fff; border:1px solid #e4e9f2; border-radius:8px; padding:8px; }
+.ctrl-item .ci-name { font-size:11px; color:#37474f; margin-bottom:3px; }
+.ctrl-item .ci-status { font-size:9px; }
+.ctrl-item .ci-status.on { color:#4caf50; }
+.ctrl-item .ci-status.off { color:#9e9e9e; }
+.ctrl-item .ci-actions { display:flex; gap:4px; margin-top:4px; }
+.ctrl-item .ci-actions button { flex:1; padding:3px 0; border:none; border-radius:4px; font-size:9px; cursor:pointer; font-family:inherit; }
+.ctrl-item .ci-actions .ci-on { background:#4caf50; color:#fff; }
+.ctrl-item .ci-actions .ci-off { background:#f5f5f5; color:#607d8b; border:1px solid #e4e9f2; }
+
+/* Profile */
+.profile-card { background:#fff; border:1px solid #e4e9f2; border-radius:10px; padding:14px; text-align:center; margin-bottom:8px; }
+.profile-card .p-avatar { width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#29b6f6,#01579b); display:flex; align-items:center; justify-content:center; font-size:13px; color:#fff; margin:0 auto 4px; }
+.profile-card .pname { font-size:15px; font-weight:600; color:#1a2a3a; }
+.profile-card .prole { font-size:11px; color:#90a4ae; }
+.menu-list { background:#fff; border:1px solid #e4e9f2; border-radius:8px; overflow:hidden; }
+.menu-item { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-bottom:1px solid #eceff1; font-size:12px; color:#37474f; cursor:pointer; }
+.menu-item:last-child { border-bottom:none; }
+.menu-item:active { background:#f5faff; }
+
+/* Login */
+.login-page { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100%; padding:40px 24px; text-align:center; }
+.login-page .logo-wrap img { height:48px; width:auto; margin-bottom:6px; }
+.login-page .logo-text { font-size:20px; font-weight:700; color:#0288d1; letter-spacing:2px; }
+.login-page .logo-sub { font-size:11px; color:#90a4ae; margin-bottom:20px; }
+.login-page input { width:100%; background:#fff; border:1px solid #e4e9f2; color:#37474f; padding:10px 14px; border-radius:8px; font-size:14px; margin-bottom:8px; outline:none; }
+.login-page .login-btn { width:100%; padding:10px; background:linear-gradient(135deg,#29b6f6,#0288d1); color:#fff; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+.login-page .links { margin-top:8px; display:flex; justify-content:space-between; width:100%; font-size:10px; color:#90a4ae; }
+
+/* Toast */
+.toast { position:fixed; top:50px; left:50%; transform:translateX(-50%) translateY(-20px); background:#37474f; color:#fff; border-radius:8px; padding:8px 16px; font-size:12px; z-index:50; opacity:0; transition:all .3s; pointer-events:none; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* Dark overlay for login */
+.blur-bg { position:fixed; inset:0; background:rgba(11,18,32,.5); backdrop-filter:blur(4px); z-index:15; opacity:0; pointer-events:none; transition:opacity .3s; }
+.blur-bg.show { opacity:1; pointer-events:auto; }
+
+.ind-modal { position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:100%; max-width:480px; background:#fff; border-radius:14px 14px 0 0; padding:14px 16px 20px; z-index:25; transition:transform .35s; box-shadow:0 -4px 30px rgba(0,0,0,.1); }
+.ind-modal.open { transform:translateX(-50%) translateY(0); }
+.ind-modal .im-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; cursor:pointer; }
+.ind-modal .im-item:active { background:#f5faff; }
+.ind-modal .im-item.active { background:#e3f2fd; }
+.ind-modal .im-item .im-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.ind-modal .im-item .im-name { font-size:13px; color:#37474f; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="left">
+      <img src="ConfigSense灵配智控_APP产品Logo.png" alt="ConfigSense">
+      <span class="app-name">灵配智控</span>
+    </div>
+    <div class="right">
+      <span class="ind-tag" id="mIndTag" onclick="showIndModal()"> 水产养殖</span>
+      <span id="mClock" style="font-size:11px;color:#607d8b;">--:--</span>
+    </div>
+  </div>
+
+  <div class="pages">
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="greeting">
+        <div><div class="name">David <small>管理员</small></div></div>
+        <div class="avatar">D</div>
+      </div>
+      <div class="sec-title"> <span id="mHomeTitle">养殖实时总览</span></div>
+      <div class="loc-strip" id="mLocStrip"></div>
+      <div class="summary-grid" id="mStats"></div>
+      <div class="sec-title">实时参数 <span class="badge">点击查看记录</span></div>
+      <div class="param-grid" id="mParams"></div>
+      <div class="mini-chart"><canvas id="mChart"></canvas></div>
+      <div class="sec-title">设备概览</div>
+      <div class="device-strip" id="mDevices"></div>
+      <div class="quick-grid">
+        <div class="q-item" onclick="switchTab(1)"><div class="q-icon"> </div><div class="q-label">监测</div></div>
+        <div class="q-item" onclick="switchTab(2)"><div class="q-icon"> </div><div class="q-label">控制</div></div>
+        <div class="q-item" onclick="switchTab(3)"><div class="q-icon"> </div><div class="q-label">报警</div></div>
+        <div class="q-item" onclick="switchTab(4)"><div class="q-icon"> </div><div class="q-label">我的</div></div>
+      </div>
+    </div>
+
+    <!-- MONITOR -->
+    <div class="page" id="page-monitor">
+      <div class="sec-title">分区设备 <span class="badge">点击查看指标</span></div>
+      <div class="loc-strip" id="mMonLoc"></div>
+      <div class="param-grid" id="mMonParams"></div>
+    </div>
+
+    <!-- CONTROL -->
+    <div class="page" id="page-ctrl">
+      <div class="sec-title">设备控制</div>
+      <div class="loc-strip" id="mCtrlLoc"></div>
+      <div class="ctrl-grid" id="mCtrlGrid"></div>
+    </div>
+
+    <!-- ALARM -->
+    <div class="page" id="page-alarm">
+      <div class="sec-title">报警中心 <span class="badge">3条未处理</span></div>
+      <div class="alarm-list" id="mAlarmList"></div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="page-profile">
+      <div class="profile-card">
+        <div class="p-avatar">D</div>
+        <div class="pname">David Liu</div>
+        <div class="prole">WEST 外贸部 · 管理员 · 企业版</div>
+      </div>
+      <div class="menu-list">
+        <div class="menu-item" onclick="showToast('历史数据查询')"><span> 历史数据</span><span style="color:#90a4ae;">›</span></div>
+        <div class="menu-item" onclick="showToast('设备绑定设置')"><span> 设备绑定</span><span style="color:#90a4ae;">›</span></div>
+        <div class="menu-item" onclick="showToast('报警阈值设置')"><span> 报警阈值</span><span style="color:#90a4ae;">›</span></div>
+        <div class="menu-item" onclick="showToast('多语言设置')"><span> 多语言</span><span style="color:#90a4ae;">›</span></div>
+        <div class="menu-item" onclick="showToast('账号安全设置')"><span> 账号安全</span><span style="color:#90a4ae;">›</span></div>
+        <div class="menu-item" onclick="showToast('关于 ConfigSense')"><span> 关于</span><span style="color:#90a4ae;">›</span></div>
+      </div>
+      <div style="margin-top:8px;text-align:center;font-size:10px;color:#b0bec5;">ConfigSense v1.0 · WEST 海南世电</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="page" id="page-login">
+      <div class="login-page">
+        <div class="logo-wrap"><img src="ConfigSense灵配智控_APP产品Logo.png" alt=""></div>
+        <div class="logo-text">ConfigSense</div>
+        <div class="logo-sub">灵配智控 · 智慧物联平台</div>
+        <input type="text" placeholder="用户名" value="admin">
+        <input type="password" placeholder="密码" value="123456">
+        <button class="login-btn" onclick="doLogin()">登 录</button>
+        <div class="links"><span>短信验证码</span><span>忘记密码？</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Industry Modal -->
+  <div class="blur-bg" id="mBlur" onclick="closeIndModal()"></div>
+  <div class="ind-modal" id="mIndModal">
+    <div class="handle" style="width:30px;height:4px;background:#e4e9f2;border-radius:2px;margin:0 auto 10px;"></div>
+    <div class="sec-title" style="margin-bottom:6px;">选择行业场景</div>
+    <div class="im-item active" data-mi="0" onclick="mSwitchInd(0)"><div class="im-dot" style="background:#0288d1;"></div><div class="im-name"> 水产养殖</div></div>
+    <div class="im-item" data-mi="1" onclick="mSwitchInd(1)"><div class="im-dot" style="background:#4caf50;"></div><div class="im-name"> 智慧种植</div></div>
+    <div class="im-item" data-mi="2" onclick="mSwitchInd(2)"><div class="im-dot" style="background:#ff9800;"></div><div class="im-name"> 智慧牧业</div></div>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay" id="mOverlay">
+    <div class="handle"></div>
+    <span class="o-close" onclick="closeMOverlay()">✕</span>
+    <div class="o-title" id="mOverlayTitle">详情</div>
+    <div class="mini-chart" style="margin-bottom:6px;padding:6px;"><canvas id="mOverlayChart" style="height:80px!important;"></canvas></div>
+    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr style="background:#f5f7fa;"><th style="padding:4px 6px;text-align:left;color:#607d8b;font-weight:500;">时间</th><th style="padding:4px 6px;text-align:left;color:#607d8b;font-weight:500;">值</th><th style="padding:4px 6px;text-align:left;color:#607d8b;font-weight:500;">状态</th></tr></thead><tbody id="mOverlayTable"></tbody></table></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="mToast"></div>
+
+  <div class="tab-bar" id="tabBar">
+    <div class="tab-item active" onclick="switchTab(0)"><div class="t-icon"> </div><div class="t-label">首页</div></div>
+    <div class="tab-item" onclick="switchTab(1)"><div class="t-icon"> </div><div class="t-label">监测</div></div>
+    <div class="tab-item" onclick="switchTab(2)"><div class="t-icon"> </div><div class="t-label">控制</div></div>
+    <div class="tab-item" onclick="switchTab(3)"><div class="t-icon"> </div><div class="t-label">报警</div></div>
+    <div class="tab-item" onclick="switchTab(4)"><div class="t-icon"> </div><div class="t-label">我的</div></div>
+  </div>
+</div>
+
+<script>
+// ===== DATA (same as desktop) =====
+const IND = [
+  {name:'水产',prefix:'养殖',base:'海南世东水产',
+    params:[{key:'do',label:'DO',unit:'mg/L',color:'#0288d1',cls:'p-do',ok:v=>v>=4},{key:'temp',label:'水温',unit:'°C',color:'#ff7043',cls:'p-temp',ok:v=>v>=15&&v<=30},{key:'ph',label:'pH',unit:'pH',color:'#7b1fa2',cls:'p-ph',ok:v=>v>=6.5&&v<=9},{key:'sal',label:'盐度',unit:'‰',color:'#00897b',cls:'p-sal',ok:v=>v>=25&&v<=32},{key:'nh3',label:'氨氮',unit:'mg/L',color:'#ef6c00',cls:'p-nh3',ok:v=>v<0.1},{key:'nt',label:'亚硝酸盐',unit:'mg/L',color:'#d32f2f',cls:'p-nitrite',ok:v=>v<0.03},{key:'turb',label:'浊度',unit:'NTU',color:'#6d4c41',cls:'p-brown',ok:v=>v<5},{key:'orp',label:'ORP',unit:'mV',color:'#546e7a',cls:'p-grey',ok:()=>true}],
+    locs:['1号塘口','2号塘口','3号塘口','4号塘口','5号塘口'],
+    data:[{do:6.82,temp:26.3,ph:7.82,sal:28.5,nh3:0.05,nt:0.02,turb:3.2,orp:185},{do:6.51,temp:26.8,ph:7.90,sal:29.1,nh3:0.08,nt:0.03,turb:4.1,orp:192},{do:7.10,temp:25.9,ph:7.65,sal:27.8,nh3:0.12,nt:0.04,turb:2.8,orp:178},{do:6.93,temp:26.5,ph:7.88,sal:28.9,nh3:0.06,nt:0.02,turb:3.6,orp:188},{do:6.70,temp:27.1,ph:7.75,sal:28.2,nh3:0.07,nt:0.03,turb:3.0,orp:190}],
+    devices:[{name:'溶氧传感器',s:'running'},{name:'6合1监测仪',s:'running'},{name:'增氧机 #1',s:'running'},{name:'增氧机 #2',s:'off'},{name:'水泵',s:'running'},{name:'投料机',s:'standby'}],
+    ctrls:[{n:'增氧机',s:'运行中',c:'on'},{n:'水泵',s:'运行中',c:'on'},{n:'投料机',s:'已停机',c:'off'},{n:'照明',s:'已关闭',c:'off'}],
+    alarms:[{l:'p0',n:'1号塘 DO偏低',d:'03:15 · 3.85mg/L',b:'pending',bt:'未处理'},{l:'p1',n:'2号塘 温度偏高',d:'14:30 · 33.2°C',b:'resolved',bt:'已恢复'},{l:'p1',n:'3号塘 氨氮超标',d:'22:00 · 0.35',b:'resolved',bt:'已恢复'}]
+  },
+  {name:'种植',prefix:'种植',base:'海南世东种植园',
+    params:[{key:'moist',label:'土壤湿度',unit:'%',color:'#0288d1',cls:'p-do',ok:v=>v>=30&&v<=70},{key:'stemp',label:'土温',unit:'°C',color:'#ff7043',cls:'p-temp',ok:v=>v>=15&&v<=28},{key:'sph',label:'土壤pH',unit:'pH',color:'#7b1fa2',cls:'p-ph',ok:v=>v>=5.5&&v<=7.5},{key:'ec',label:'EC',unit:'mS/cm',color:'#ff8f00',cls:'p-amber',ok:v=>v<1.5},{key:'npk',label:'氮含量',unit:'ppm',color:'#689f38',cls:'p-lime',ok:v=>v>=30&&v<=80},{key:'light',label:'光照',unit:'W/m²',color:'#ef6c00',cls:'p-nh3',ok:v=>v<800},{key:'co2',label:'CO₂',unit:'ppm',color:'#546e7a',cls:'p-grey',ok:v=>v>=300&&v<=800},{key:'press',label:'气压',unit:'hPa',color:'#6d4c41',cls:'p-brown',ok:()=>true}],
+    locs:['1号地块','2号地块','3号地块','4号地块','5号地块'],
+    data:[{moist:52.4,stemp:22.8,sph:6.8,ec:1.28,npk:45,light:486,co2:412,press:1013},{moist:48.2,stemp:23.5,sph:6.5,ec:1.42,npk:52,light:523,co2:398,press:1011},{moist:55.8,stemp:21.9,sph:7.0,ec:1.15,npk:38,light:445,co2:425,press:1014},{moist:60.1,stemp:22.1,sph:6.7,ec:1.35,npk:48,light:468,co2:408,press:1012},{moist:44.5,stemp:24.2,sph:6.9,ec:1.52,npk:55,light:510,co2:390,press:1010}],
+    devices:[{n:'7合1土壤传感器',s:'running'},{n:'气象站',s:'running'},{n:'灌溉阀 #1',s:'running'},{n:'灌溉阀 #2',s:'off'},{n:'温室风机',s:'running'},{n:'卷帘机',s:'standby'}],
+    ctrls:[{n:'灌溉阀',s:'运行中',c:'on'},{n:'施肥泵',s:'运行中',c:'on'},{n:'温室风机',s:'运行中',c:'on'},{n:'卷帘机',s:'已关闭',c:'off'}],
+    alarms:[{l:'p1',n:'1号地块 湿度过低',d:'06:00 · 28.5%',b:'resolved',bt:'已灌溉'},{l:'p2',n:'2号地块 光照偏高',d:'12:30 · 823W',b:'pending',bt:'未处理'},{l:'p1',n:'3号地块 EC偏高',d:'昨日 · 1.65',b:'resolved',bt:'已处理'}]
+  },
+  {name:'牧业',prefix:'牧业',base:'海南世东牧场',
+    params:[{key:'gps',label:'GPS',unit:'%',color:'#4caf50',cls:'p-green',ok:v=>v>95},{key:'btemp',label:'体温',unit:'°C',color:'#ff7043',cls:'p-temp',ok:v=>v>=37.5&&v<=39.5},{key:'step',label:'活动量',unit:'步',color:'#ff8f00',cls:'p-amber',ok:()=>true},{key:'fence',label:'围栏',unit:'',color:'#4caf50',cls:'p-green',ok:()=>true},{key:'batt',label:'电量',unit:'%',color:'#ef6c00',cls:'p-nh3',ok:v=>v>30},{key:'sig',label:'信号',unit:'dBm',color:'#546e7a',cls:'p-grey',ok:v=>v>-80},{key:'count',label:'存栏',unit:'头',color:'#0288d1',cls:'p-do',ok:()=>true},{key:'alert',label:'越界',unit:'次',color:'#d32f2f',cls:'p-nitrite',ok:v=>v<1}],
+    locs:['1号牧场','2号牧场','3号牧场','4号牧场','5号牧场'],
+    data:[{gps:98,btemp:38.5,step:2560,fence:'正常',batt:72,sig:-58,count:128,alert:0},{gps:96,btemp:38.8,step:3120,fence:'正常',batt:65,sig:-62,count:85,alert:1},{gps:99,btemp:38.2,step:1890,fence:'正常',batt:80,sig:-55,count:156,alert:0},{gps:97,btemp:39.0,step:2780,fence:'告警',batt:45,sig:-70,count:72,alert:2},{gps:95,btemp:38.6,step:2200,fence:'正常',batt:55,sig:-65,count:110,alert:0}],
+    devices:[{n:'GPS耳标 B30',s:'running'},{n:'追踪器GT080',s:'running'},{n:'围栏基站#1',s:'running'},{n:'围栏基站#2',s:'running'},{n:'气象站',s:'running'},{n:'项圈#A01',s:'running'}],
+    ctrls:[{n:'围栏基站',s:'运行中',c:'on'},{n:'语音驱赶',s:'待命',c:'standby'},{n:'GPS追踪',s:'运行中',c:'on'},{n:'电子围栏',s:'已启用',c:'on'}],
+    alarms:[{l:'p0',n:'2号牧场 越界告警',d:'13:20 · 1头牛',b:'pending',bt:'未处理'},{l:'p1',n:'4号牧场 低电量',d:'10:00 · 15%',b:'resolved',bt:'已更换'},{l:'p2',n:'1号牧场 基站离线',d:'昨日22:00',b:'resolved',bt:'已恢复'}]
+  }
+];
+
+let curLoc = 0, curInd = 0, curTab = 0;
+let mChart = null, mOverlayChart = null;
+const TIMES = ['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00'];
+
+function showToast(msg) { const t=document.getElementById('mToast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2000); }
+
+function switchTab(idx) {
+  curTab = idx;
+  document.querySelectorAll('.tab-item').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  const pages = ['page-home','page-monitor','page-ctrl','page-alarm','page-profile'];
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(pages[idx]).classList.add('active');
+  if (idx === 0) refreshHome();
+  if (idx === 1) refreshMon();
+  if (idx === 2) refreshCtrl();
+  if (idx === 3) refreshAlarm();
+}
+
+// CLOCK
+setInterval(()=>{const n=new Date(); document.getElementById('mClock').textContent=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0');},1000);
+
+// INDUSTRY MODAL
+function showIndModal() { document.getElementById('mBlur').classList.add('show'); document.getElementById('mIndModal').classList.add('open'); }
+function closeIndModal() { document.getElementById('mBlur').classList.remove('show'); document.getElementById('mIndModal').classList.remove('open'); }
+function mSwitchInd(idx) {
+  curInd = idx; curLoc = 0;
+  document.querySelectorAll('.im-item').forEach((e,i)=>e.classList.toggle('active',i===idx));
+  document.getElementById('mIndTag').textContent = ' '+IND[idx].name;
+  closeIndModal();
+  refreshHome();
+  showToast('已切换到: '+IND[idx].name+' 行业');
+}
+
+// HOME
+function refreshHome() {
+  const ind = IND[curInd];
+  document.getElementById('mHomeTitle').textContent = ind.prefix+'实时总览';
+  document.getElementById('mLocStrip').innerHTML = ind.locs.map((l,i) => '<div class="loc-chip '+(i===curLoc?'active':'')+'" onclick="curLoc='+i+';refreshHome();showToast(\''+l+'\')">'+l+'</div>').join('');
+  const d = ind.data[curLoc]||ind.data[0];
+  document.getElementById('mStats').innerHTML = [
+    {l:ind.locs.length+' 个',s:ind.locPrefix+'数',c:'#0288d1'},
+    {l:ind.devices.filter(x=>x.s==='running').length+'/'+ind.devices.length,s:'设备在线',c:'#4caf50'},
+    {l:ind.alarms.filter(a=>a.b==='pending').length,s:'报警',c:'#ff9800'},
+    {l:ind.params.length,s:'指标数',c:'#7b1fa2'}
+  ].map(x => '<div class="s-card"><div class="s-value" style="color:'+x.c+'">'+x.l+'</div><div class="s-label">'+x.s+'</div></div>').join('');
+  document.getElementById('mParams').innerHTML = ind.params.slice(0,6).map(p => {
+    const v = d[p.key]; const dv = typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(v<10?2:1)):v;
+    const ok = p.ok(v); const c = ok?'ok':'warn';
+    return '<div class="m-param" onclick="openMDetail(\''+p.key+'\')"><div class="mp-bar" style="background:'+p.color+'"></div><div class="mp-label">'+p.label+'</div><div class="mp-value" style="color:'+p.color+'">'+dv+'</div><div class="mp-unit">'+p.unit+'</div><div class="mp-status '+c+'">'+(ok?'正常':'偏高')+'</div></div>';
+  }).join('');
+  document.getElementById('mDevices').innerHTML = ind.devices.map(d => '<div class="dev-strip-item" onclick="showToast(\''+d.name+'\')"><div class="ds-name">'+d.name+'</div><div class="ds-status '+(d.s==='running'?'on':'off')+'">'+(d.s==='running'?'运行中':'关闭')+'</div></div>').join('');
+  updateMChart();
+}
+
+function updateMChart() {
+  const ctx = document.getElementById('mChart').getContext('2d');
+  if (mChart) mChart.destroy();
+  const ind = IND[curInd];
+  const p3 = ind.params.slice(0,3);
+  const cols = ['#0288d1','#ff7043','#7b1fa2'];
+  mChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: ['00','04','08','12','16','20'], datasets: p3.map((p,i)=>({
+      label: p.label,
+      data: TIMES.filter((_,ti)=>ti%2===0).map(()=>{const b=(ind.data[curLoc]||ind.data[0])[p.key];return typeof b==='number'?Math.max(0,b+(Math.random()-.5)*b*.2):0;}),
+      borderColor: cols[i], backgroundColor:'transparent', fill:false, tension:.3, pointRadius:2, borderWidth:2
+    })) },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{color:'#607d8b',boxWidth:10,font:{size:9},usePointStyle:true}}}, scales:{x:{ticks:{color:'#90a4ae',font:{size:8}},grid:{color:'rgba(0,0,0,.03)'}},y:{ticks:{color:'#90a4ae',font:{size:8}},grid:{color:'rgba(0,0,0,.03)'}}} }
+  });
+}
+
+// MONITOR
+function refreshMon() {
+  const ind = IND[curInd];
+  document.getElementById('mMonLoc').innerHTML = ind.locs.map((l,i) => '<div class="loc-chip '+(i===curLoc?'active':'')+'" onclick="curLoc='+i+';refreshMon();showToast(\''+l+'\')">'+l+'</div>').join('');
+  const d = ind.data[curLoc]||ind.data[0];
+  document.getElementById('mMonParams').innerHTML = ind.params.map(p => {
+    const v = d[p.key]; const dv = typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(v<10?2:1)):v;
+    return '<div class="m-param" onclick="openMDetail(\''+p.key+'\')"><div class="mp-bar" style="background:'+p.color+'"></div><div class="mp-label">'+p.label+'</div><div class="mp-value" style="color:'+p.color+'">'+dv+'</div><div class="mp-unit">'+p.unit+'</div><div class="mp-status ok">实时</div></div>';
+  }).join('');
+}
+
+// CONTROL
+function refreshCtrl() {
+  const ind = IND[curInd];
+  document.getElementById('mCtrlLoc').innerHTML = ind.locs.map((l,i) => '<div class="loc-chip '+(i===curLoc?'active':'')+'" onclick="curLoc='+i+';refreshCtrl();showToast(\''+l+'\')">'+l+'</div>').join('');
+  document.getElementById('mCtrlGrid').innerHTML = ind.ctrls.map(c => '<div class="ctrl-item"><div class="ci-name"> '+c.n+'</div><div class="ci-status '+(c.c==='on'?'on':'off')+'">'+c.s+'</div><div class="ci-actions"><button class="ci-on" onclick="showToast(\''+c.n+' 已启动\')">启动</button><button class="ci-off" onclick="showToast(\''+c.n+' 已停止\')">停止</button></div></div>').join('');
+}
+
+// ALARM
+function refreshAlarm() {
+  document.getElementById('mAlarmList').innerHTML = IND[curInd].alarms.map(a =>
+    '<div class="alarm-item" onclick="showToast(\''+a.n+'\')"><div class="a-left"><div class="a-dot '+a.l+'"></div><div><div class="a-name">'+a.n+'</div><div class="a-desc">'+a.d+'</div></div></div><span class="a-badge '+a.b+'">'+a.bt+'</span></div>'
+  ).join('');
+}
+
+// DETAIL OVERLAY
+function openMDetail(key) {
+  const ind = IND[curInd];
+  const p = ind.params.find(x => x.key === key);
+  if (!p) return;
+  const d = ind.data[curLoc]||ind.data[0];
+  const v = d[p.key];
+  document.getElementById('mOverlayTitle').textContent = p.label+' · '+ind.locs[curLoc];
+  document.getElementById('mOverlayTable').innerHTML = TIMES.map((t,i) => {
+    const val = typeof v==='number'?Math.max(0,(v+(Math.random()-.5)*v*.25)).toFixed(2):v;
+    return '<tr><td style="padding:3px 6px;border-bottom:1px solid #eceff1;">'+t+'</td><td style="padding:3px 6px;border-bottom:1px solid #eceff1;">'+val+'</td><td style="padding:3px 6px;border-bottom:1px solid #eceff1;"><span class="tag ok" style="font-size:8px;padding:1px 5px;background:#e8f5e9;color:#4caf50;border-radius:3px;">正常</span></td></tr>';
+  }).join('');
+  setTimeout(() => {
+    const ctx = document.getElementById('mOverlayChart').getContext('2d');
+    if (mOverlayChart) mOverlayChart.destroy();
+    mOverlayChart = new Chart(ctx, {
+      type:'line',
+      data:{labels:TIMES,datasets:[{label:p.label,data:TIMES.map(()=>typeof v==='number'?Math.max(0,v+(Math.random()-.5)*v*.3):0),borderColor:p.color,backgroundColor:'transparent',fill:false,tension:.3,pointRadius:1,borderWidth:1.5}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#90a4ae',font:{size:8},maxTicksLimit:6},grid:{display:false}},y:{ticks:{color:'#90a4ae',font:{size:8}},grid:{color:'rgba(0,0,0,.03)'}}}}
+    });
+  },50);
+  document.getElementById('mOverlay').classList.add('open');
+}
+function closeMOverlay() { document.getElementById('mOverlay').classList.remove('open'); }
+
+function doLogin() { document.getElementById('page-login').classList.remove('active'); document.getElementById('page-home').classList.add('active'); showToast('登录成功'); }
+
+// INIT
+refreshHome();
+</script>
+</body>
+</html>
