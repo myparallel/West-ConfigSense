@@ -298,7 +298,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 
 <script>
 const IND = [
-  {name:'水产养殖',prefix:'养殖',base:'海南世东水产',
+  {name:'水产养殖',prefix:'养殖',locPrefix:'塘口',base:'海南世东水产',
     banner:'https://picsum.photos/seed/aquabanner/960/240',
     svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22h20"/><path d="M6 22V10l4-6 4 6v12"/><path d="M10 22v-6h4v6"/><path d="M18 22V14l-2-4 2-4 2 4-2 4v8"/></svg>',
     sub:'水质监测 · 智能增氧 · 溶氧管理',
@@ -309,7 +309,7 @@ const IND = [
     ctrls:[{n:'增氧机',s:'运行中',c:'on'},{n:'循环水泵',s:'运行中',c:'on'},{n:'自动投料机',s:'已停机',c:'off'},{n:'塘口照明',s:'已关闭',c:'off'},{n:'温度调节器',s:'恒温26°C',c:'on'},{n:'水质监测箱',s:'轮巡中',c:'on'}],
     alarms:[{l:'p0',n:'1号塘 DO偏低',d:'03:15 · 3.85mg/L',b:'pending',bt:'未处理'},{l:'p1',n:'2号塘 温度偏高',d:'14:30 · 33.2°C',b:'resolved',bt:'已恢复'},{l:'p1',n:'3号塘 氨氮超标',d:'22:00 · 0.35',b:'resolved',bt:'已恢复'}]
   },
-  {name:'智慧种植',prefix:'种植',base:'海南世东种植园',
+  {name:'智慧种植',prefix:'种植',locPrefix:'地块',base:'海南世东种植园',
     banner:'https://picsum.photos/seed/plantbanner/960/240',
     svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
     sub:'土壤监测 · 灌溉控制 · 温室环控',
@@ -320,7 +320,7 @@ const IND = [
     ctrls:[{n:'灌溉阀',s:'运行中',c:'on'},{n:'水肥一体泵',s:'运行中',c:'on'},{n:'温室风机',s:'运行中',c:'on'},{n:'电动卷帘机',s:'已关闭',c:'off'},{n:'LED补光灯',s:'已关闭',c:'off'},{n:'喷滴灌系统',s:'待机',c:'standby'}],
     alarms:[{l:'p1',n:'1号地块 湿度过低',d:'06:00 · 28.5%',b:'resolved',bt:'已灌溉'},{l:'p2',n:'2号地块 光照偏高',d:'12:30 · 823W',b:'pending',bt:'未处理'},{l:'p1',n:'3号地块 EC偏高',d:'昨日 · 1.65',b:'resolved',bt:'已处理'}]
   },
-  {name:'智慧牧业',prefix:'牧业',base:'海南世东牧场',
+  {name:'智慧牧业',prefix:'牧业',locPrefix:'牧场',base:'海南世东牧场',
     banner:'https://picsum.photos/seed/livebanner/960/240',
     svg:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M9 14l-3 8h12l-3-8"/><path d="M5 22h14"/></svg>',
     sub:'GPS定位 · 电子围栏 · 健康监测',
@@ -376,13 +376,13 @@ function confirmInd(){
   }
   hideIndPicker();
 }
-function updateBanner(){
+function updateBanner(){try{
   const ind=IND[curInd];
   document.getElementById('bannerBg').style.backgroundImage='url('+ind.banner+')';
   document.getElementById('indSvg').innerHTML=ind.svg;
   document.getElementById('indLabel').textContent=ind.name;
   document.getElementById('indSub').textContent=ind.sub;
-}
+}catch(e){}}
 
 // Sub Nav
 document.querySelectorAll('#monSubNav .sn-item').forEach(el=>{el.addEventListener('click',function(){document.querySelectorAll('#monSubNav .sn-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.getElementById('monZone').style.display=this.dataset.mon==='0'?'':'none';document.getElementById('monPool').style.display=this.dataset.mon==='1'?'':'none';if(this.dataset.mon==='1')refreshPool();});});
@@ -400,10 +400,9 @@ function refreshHome(){
   updateMChart();
 }
 function updateMChart(){
-  const ctx=document.getElementById('mChart').getContext('2d');if(mChart)mChart.destroy();
+  const ctx=document.getElementById('mChart');if(!ctx)return;const c=ctx.getContext('2d');if(!c)return;if(mChart)mChart.destroy();
   const ind=IND[curInd];const cols=['#0288d1','#ff7043','#7b1fa2'];const p3=ind.params.slice(0,3);
-  mChart=new Chart(ctx,{type:'line',data:{labels:['00','04','08','12','16','20'],datasets:p3.map((p,i)=>({label:p.label,data:TIMES.filter((_,ti)=>ti%2===0).map(()=>{const b=(ind.data[curLoc]||ind.data[0])[p.key];return typeof b==='number'?Math.max(0,b+(Math.random()-.5)*b*.2):0;}),borderColor:cols[i],backgroundColor:'transparent',fill:false,tension:.3,pointRadius:2,borderWidth:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#607d8b',boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{x:{ticks:{color:'#90a4ae',font:{size:8}},grid:{color:'rgba(0,0,0,.03)'}},y:{ticks:{color:'#90a4ae',font:{size:8}},grid:{color:'rgba(0,0,0,.03)'}}}});
-}
+  try{mChart=new Chart(c,{type:'line',data:{labels:['00','04','08','12','16','20'],datasets:p3.map((p,i)=>({label:p.label,data:TIMES.filter((_,ti)=>ti%2===0).map(()=>{const b=(ind.data[curLoc]||ind.data[0])[p.key];return typeof b==='number'?Math.max(0,b+(Math.random()-.5)*b*.2):0;}),borderColor:cols[i],backgroundColor:'transparent',fill:false,tension:.3,pointRadius:2,borderWidth:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#607d8b',boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{x:{ticks:{color:'#90a4ae',font:{size:8}},grid:{color:'rgba(0,0,0,.03)'}},y:{ticks:{color:'#90a4ae',font:{size:8}},grid:{color:'rgba(0,0,0,.03)'}}}});}catch(e){}
 
 function refreshMonitor(){const ind=IND[curInd];document.getElementById('mMonLoc').innerHTML=ind.locs.map((l,i)=>'<div class="loc-chip '+(i===curLoc?'active':'')+'" onclick="curLoc='+i+';refreshMonitor();showToast(\''+l+'\')">'+l+'</div>').join('');const d=ind.data[curLoc]||ind.data[0];document.getElementById('mMonParams').innerHTML=ind.params.map(p=>{const v=d[p.key];const dv=typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(v<10?2:1)):v;return '<div class="m-param" onclick="openMDetail(\''+p.key+'\')"><div class="mp-bar" style="background:'+p.color+'"></div><div class="mp-label">'+p.label+'</div><div class="mp-value" style="color:'+p.color+'">'+dv+'</div><div class="mp-unit">'+p.unit+'</div><div class="mp-status ok">实时</div></div>';}).join('');}
 
@@ -412,7 +411,7 @@ function togglePool(c){const i=poolSel.indexOf(c);if(i>=0)poolSel.splice(i,1);el
 
 function refreshDevice(){const ind=IND[curInd];document.getElementById('mDevLoc').innerHTML=ind.locs.map((l,i)=>'<div class="loc-chip '+(i===curLoc?'active':'')+'" onclick="curLoc='+i+';refreshDevice();showToast(\''+l+'\')">'+l+'</div>').join('');document.getElementById('mDevList').innerHTML=ind.devices.map(d=>'<div class="dev-row" onclick="showToast(\''+d.name+'\')"><div class="dr-left"><div class="dr-name">'+d.name+'</div><div class="dr-desc">'+(d.s==='running'?'运行中 · 在线':d.s==='standby'?'待机':'已关闭')+'</div></div><div class="dr-status '+(d.s==='running'?'on':'off')+'">'+(d.s==='running'?'在线':'离线')+'</div></div>').join('');document.getElementById('mCtrlLoc').innerHTML=ind.locs.map((l,i)=>'<div class="loc-chip '+(i===curLoc?'active':'')+'" onclick="curLoc='+i+';refreshDevice();showToast(\''+l+'\')">'+l+'</div>').join('');document.getElementById('mCtrlGrid').innerHTML=ind.ctrls.map(c=>'<div class="ctrl-item"><div class="ci-name"> '+c.n+'</div><div class="ci-status '+(c.c==='on'?'on':'off')+'">'+c.s+'</div><div class="ci-actions"><button class="ci-on" onclick="showToast(\''+c.n+' 已启动\')">启动</button><button class="ci-off" onclick="showToast(\''+c.n+' 已停止\')">停止</button></div></div>').join('');}
 
-function refreshData(){document.getElementById('dataPass').style.display='';document.getElementById('dataAlarm').style.display='none';document.getElementById('dataHist').style.display='none';refreshAlarm();refreshHist();}
+function refreshData(){try{document.getElementById('dataPass').style.display='';document.getElementById('dataAlarm').style.display='none';document.getElementById('dataHist').style.display='none';refreshAlarm();refreshHist();}catch(e){}}
 function refreshAlarm(){document.getElementById('alarmCount').textContent=IND[curInd].alarms.filter(a=>a.b==='pending').length+'条未处理';document.getElementById('mAlarmList').innerHTML=IND[curInd].alarms.map(a=>'<div class="alarm-item" onclick="showToast(\''+a.n+'\')"><div class="a-left"><div class="a-dot '+a.l+'"></div><div><div class="a-name">'+a.n+'</div><div class="a-desc">'+a.d+'</div></div></div><span class="a-badge '+a.b+'">'+a.bt+'</span></div>').join('');}
 function refreshHist(){const ind=IND[curInd];document.getElementById('mHistLoc').innerHTML=ind.locs.map((l,i)=>'<div class="loc-chip '+(i===curLoc?'active':'')+'" onclick="curLoc='+i+';refreshHist();showToast(\''+l+'\')">'+l+'</div>').join('');const ctx=document.getElementById('mHistChart').getContext('2d');if(mHistChart)mHistChart.destroy();const d=ind.data[curLoc]||ind.data[0];mHistChart=new Chart(ctx,{type:'line',data:{labels:['05-20','05-22','05-24','05-26'],datasets:ind.params.slice(0,3).map((p,i)=>({label:p.label,data:[1,2,3,4].map(()=>{const b=d[p.key];return typeof b==='number'?Math.max(0,Number((b+(Math.random()-.5)*b*.15).toFixed(2))):0;}),borderColor:['#0288d1','#ff7043','#7b1fa2'][i],backgroundColor:'transparent',fill:false,tension:.3,pointRadius:2,borderWidth:2}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{color:'#607d8b',boxWidth:8,font:{size:8},usePointStyle:true}}},scales:{x:{ticks:{color:'#90a4ae',font:{size:7}},grid:{display:false}},y:{ticks:{color:'#90a4ae',font:{size:7}},grid:{color:'rgba(0,0,0,.03)'}}}});let r='';for(let i=0;i<5;i++){const p=ind.params[i%ind.params.length];const v=d[p.key];const val=typeof v==='number'?(v+(Math.random()-.5)*v*.1).toFixed(2):v;r+='<div class="dt-row"><div class="dt-info"><div class="dt-name">'+p.label+'</div><div class="dt-code">2026-05-'+String(22+i).padStart(2,'0')+' 14:00</div></div><div class="dt-val" style="color:'+p.color+'">'+val+'</div><span class="dt-tag ok">正常</span></div>';}document.getElementById('mHistTable').innerHTML=r;}
 
@@ -427,8 +426,8 @@ function openMDetail(key){
 function closeMOverlay(){document.getElementById('mOverlay').classList.remove('open');}
 
 // Init
-updateBanner();
-refreshHome();
+try{updateBanner();}catch(e){}
+try{refreshHome();}catch(e){}
 </script>
 </body>
 </html>
