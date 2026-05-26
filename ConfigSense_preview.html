@@ -225,6 +225,25 @@ table .tag.crit { background:#ffebee; color:#f44336; }
 #miniMap { height:170px; background:#e8eaf6; }
 .leaflet-container { background:#e8eaf6; }
 
+/* AI Assistant Panel */
+.ai-panel { background:#fff; border:1px solid #e4e9f2; border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px; box-shadow:0 1px 4px rgba(0,0,0,.03); }
+.ai-panel .ai-header { display:flex; align-items:center; gap:10px; }
+.ai-panel .ai-avatar { width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg,#29b6f6,#01579b); display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; flex-shrink:0; }
+.ai-panel .ai-info .ai-name { font-size:13px; font-weight:600; color:#37474f; }
+.ai-panel .ai-info .ai-status { font-size:10px; color:#90a4ae; display:flex; align-items:center; gap:4px; }
+.ai-panel .ai-info .ai-status .dot { width:5px; height:5px; border-radius:50%; background:#4caf50; display:inline-block; animation:pulse 1.5s infinite; }
+.ai-panel .ai-chat { background:#f5faff; border:1px solid #e3f2fd; border-radius:10px; padding:12px; font-size:12px; color:#37474f; line-height:1.6; min-height:80px; position:relative; }
+.ai-panel .ai-chat .ai-thinking { display:flex; gap:4px; align-items:center; }
+.ai-panel .ai-chat .ai-thinking span { width:6px; height:6px; border-radius:50%; background:#90a4ae; animation:bounce 1.2s infinite; }
+.ai-panel .ai-chat .ai-thinking span:nth-child(2) { animation-delay:.2s; }
+.ai-panel .ai-chat .ai-thinking span:nth-child(3) { animation-delay:.4s; }
+@keyframes bounce { 0%,80%,100% { transform:translateY(0); } 40% { transform:translateY(-6px); } }
+.ai-panel .ai-suggestions { display:flex; flex-direction:column; gap:6px; }
+.ai-panel .ai-tag { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; transition:.15s; border:1px solid #e4e9f2; background:#fff; color:#607d8b; }
+.ai-panel .ai-tag:hover { border-color:#29b6f6; color:#0288d1; }
+.ai-panel .ai-tag.active { background:#e3f2fd; border-color:#29b6f6; color:#01579b; font-weight:500; }
+.ai-panel .ai-tag .dot { width:5px; height:5px; border-radius:50%; display:inline-block; }
+
 /* Zone Map page */
 .zone-layout { display:flex; gap:14px; height:calc(100vh - 220px); min-height:400px; }
 .zone-map-area { flex:1; border-radius:10px; overflow:hidden; border:1px solid #e4e9f2; position:relative; }
@@ -356,22 +375,42 @@ table .tag.crit { background:#ffebee; color:#f44336; }
 
       <!-- ===== PAGE 2: 指标数据池 ===== -->
       <div class="page" data-page="2">
-        <div class="curved-header"><h2> 指标数据池</h2><span class="sub">ConfigSense 核心 · 指标定义 · 行业映射 · 数据归类</span></div>
-        <div class="filter-bar">
-          <span class="loc-btn active" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('已筛选: 全部指标')">全部 (28)</span>
-          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('已筛选: 水质类')">水质类 (10)</span>
-          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('已筛选: 土壤类')">土壤类 (5)</span>
-          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('已筛选: 气象类')">气象类 (6)</span>
-        </div>
-        <div class="glass" style="padding:0;overflow:hidden;">
-          <div class="table-wrap">
-            <table><thead><tr><th>指标名称</th><th>编码</th><th>类别</th><th>单位</th><th>采集方式</th><th>当前值</th><th>状态</th><th>行业</th></tr></thead>
-            <tbody><tr><td>溶解氧 DO</td><td style="font-family:monospace;">WQ-001</td><td>水质核心</td><td>mg/L</td><td>传感器自动</td><td>6.82</td><td><span class="tag ok">正常</span></td><td>水产</td></tr><tr><td>水温</td><td style="font-family:monospace;">WQ-002</td><td>水质核心</td><td>°C</td><td>传感器自动</td><td>26.3</td><td><span class="tag ok">正常</span></td><td>水产/种植</td></tr><tr><td>pH 值</td><td style="font-family:monospace;">WQ-003</td><td>水质核心</td><td>pH</td><td>传感器自动</td><td>7.82</td><td><span class="tag ok">正常</span></td><td>水产/种植</td></tr><tr><td>氨氮 NH₃-N</td><td style="font-family:monospace;">WQ-004</td><td>水质扩展</td><td>mg/L</td><td>传感器/手动</td><td>0.05</td><td><span class="tag ok">正常</span></td><td>水产</td></tr><tr><td>土壤湿度</td><td style="font-family:monospace;">SL-001</td><td>土壤</td><td>%</td><td>传感器自动</td><td>52.4</td><td><span class="tag ok">正常</span></td><td>种植</td></tr><tr><td>EC 电导率</td><td style="font-family:monospace;">SL-002</td><td>土壤</td><td>mS/cm</td><td>传感器自动</td><td>1.28</td><td><span class="tag warn">偏高</span></td><td>种植</td></tr><tr><td>空气温度</td><td style="font-family:monospace;">WE-001</td><td>气象</td><td>°C</td><td>传感器自动</td><td>28.5</td><td><span class="tag ok">正常</span></td><td>全行业</td></tr><tr><td>光照辐射</td><td style="font-family:monospace;">WE-004</td><td>气象</td><td>W/m²</td><td>传感器自动</td><td>486</td><td><span class="tag ok">正常</span></td><td>种植</td></tr><tr><td>GPS 位置</td><td style="font-family:monospace;">LV-001</td><td>定位</td><td>坐标</td><td>GPS</td><td>110.35°E</td><td><span class="tag ok">正常</span></td><td>牧业</td></tr><tr><td>液位</td><td style="font-family:monospace;">WQ-010</td><td>水位</td><td>cm</td><td>传感器自动</td><td>185</td><td><span class="tag ok">正常</span></td><td>水产</td></tr></tbody></table>
+        <div class="curved-header"><h2> 指标数据池</h2><span class="sub">勾选指标 · AI 智能推荐行业场景 · ConfigSense 核心</span></div>
+        <div style="display:grid;grid-template-columns:1fr 280px;gap:14px;align-items:start;">
+          <div>
+            <div class="filter-bar">
+              <span class="loc-btn active" onclick="filterPool('all')">全部 (28)</span>
+              <span class="loc-btn" onclick="filterPool('water')">水质类 (10)</span>
+              <span class="loc-btn" onclick="filterPool('soil')">土壤类 (5)</span>
+              <span class="loc-btn" onclick="filterPool('weather')">气象类 (6)</span>
+              <span style="margin-left:auto;font-size:11px;color:#90a4ae;" id="poolCount">已选 0 项</span>
+            </div>
+            <div class="glass" style="padding:0;overflow:hidden;">
+              <div class="table-wrap">
+                <table><thead><tr><th style="width:32px;"></th><th>指标名称</th><th>编码</th><th>类别</th><th>单位</th><th>采集方式</th><th>当前值</th><th>状态</th><th>行业</th></tr></thead>
+                <tbody id="poolTableBody"></tbody></table>
+              </div>
+            </div>
           </div>
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
-          <button class="btn-outline" onclick="showToast('正在导出 CSV...')" style="background:#fff;border:1px solid #e4e9f2;padding:6px 16px;border-radius:6px;font-size:12px;color:#607d8b;cursor:pointer;"> 导出 CSV</button>
-          <button onclick="showToast('新增指标表单已打开')" style="background:linear-gradient(135deg,#29b6f6,#0288d1);color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;">+ 新增指标</button>
+          <!-- AI Assistant -->
+          <div class="ai-panel" id="aiPanel">
+            <div class="ai-header">
+              <div class="ai-avatar">AI</div>
+              <div class="ai-info"><div class="ai-name">ConfigSense AI</div><div class="ai-status"><span class="dot"></span> 在线 · 场景推荐就绪</div></div>
+            </div>
+            <div class="ai-chat" id="aiChat">
+              <div style="color:#90a4ae;font-size:11px;">👋 您好！请勾选您关注的指标，AI 将为您智能推荐最匹配的行业场景和 UI 主题。</div>
+            </div>
+            <div id="aiSuggestions" class="ai-suggestions">
+              <div style="font-size:10px;color:#b0bec5;">已识别的行业场景：</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;" id="aiTags">
+                <span class="ai-tag" onclick="applyAI('aqua')"><span class="dot" style="background:#0288d1;"></span> 水产养殖</span>
+                <span class="ai-tag" onclick="applyAI('plant')"><span class="dot" style="background:#4caf50;"></span> 智慧种植</span>
+                <span class="ai-tag" onclick="applyAI('live')"><span class="dot" style="background:#ff9800;"></span> 智慧牧业</span>
+              </div>
+              <button onclick="aiAnalyze()" style="background:linear-gradient(135deg,#29b6f6,#0288d1);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;width:100%;">  AI 智能分析</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -618,6 +657,7 @@ document.querySelectorAll('#sidebarNav a[data-page]').forEach(el => {
     document.getElementById('pageTitle').textContent = PAGE_TITLES[currentPage];
     if (currentPage === 0) refreshDashboard();
     if (currentPage === 1) refreshWater();
+    if (currentPage === 2) initPoolData();
     if (currentPage === 3) renderDeviceTable();
     if (currentPage === 4) refreshControl();
     if (currentPage === 5) refreshVideo();
@@ -857,6 +897,134 @@ function selectZoneDevice(idx) {
   }).join('');
 
   showToast('已选择: '+dev.name);
+}
+
+// PAGE 2: 指标数据池
+const POOL_ITEMS = [
+  {name:'溶解氧 DO',code:'WQ-001',cat:'water',unit:'mg/L',mode:'传感器自动',val:'6.82',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'水温',code:'WQ-002',cat:'water',unit:'°C',mode:'传感器自动',val:'26.3',tag:'ok',status:'正常',ind:'水产/种植',indCat:'multi'},
+  {name:'pH 值',code:'WQ-003',cat:'water',unit:'pH',mode:'传感器自动',val:'7.82',tag:'ok',status:'正常',ind:'水产/种植',indCat:'multi'},
+  {name:'氨氮 NH₃-N',code:'WQ-004',cat:'water',unit:'mg/L',mode:'传感器/手动',val:'0.05',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'浊度',code:'WQ-005',cat:'water',unit:'NTU',mode:'传感器自动',val:'3.2',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'盐度',code:'WQ-006',cat:'water',unit:'‰',mode:'传感器自动',val:'28.5',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'亚硝酸盐',code:'WQ-007',cat:'water',unit:'mg/L',mode:'传感器自动',val:'0.02',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'ORP 氧化还原',code:'WQ-008',cat:'water',unit:'mV',mode:'传感器自动',val:'185',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'液位',code:'WQ-010',cat:'water',unit:'cm',mode:'传感器自动',val:'185',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'余氯',code:'WQ-011',cat:'water',unit:'mg/L',mode:'传感器/手动',val:'0.02',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'土壤湿度',code:'SL-001',cat:'soil',unit:'%',mode:'传感器自动',val:'52.4',tag:'ok',status:'正常',ind:'种植',indCat:'plant'},
+  {name:'土壤温度',code:'SL-002',cat:'soil',unit:'°C',mode:'传感器自动',val:'22.8',tag:'ok',status:'正常',ind:'种植',indCat:'plant'},
+  {name:'土壤 pH',code:'SL-003',cat:'soil',unit:'pH',mode:'传感器自动',val:'6.8',tag:'ok',status:'正常',ind:'种植',indCat:'plant'},
+  {name:'EC 电导率',code:'SL-004',cat:'soil',unit:'mS/cm',mode:'传感器自动',val:'1.28',tag:'warn',status:'偏高',ind:'种植',indCat:'plant'},
+  {name:'NPK 氮磷钾',code:'SL-005',cat:'soil',unit:'ppm',mode:'传感器自动',val:'45',tag:'ok',status:'正常',ind:'种植',indCat:'plant'},
+  {name:'空气温度',code:'WE-001',cat:'weather',unit:'°C',mode:'传感器自动',val:'28.5',tag:'ok',status:'正常',ind:'全行业',indCat:'multi'},
+  {name:'空气湿度',code:'WE-002',cat:'weather',unit:'%',mode:'传感器自动',val:'62',tag:'ok',status:'正常',ind:'全行业',indCat:'multi'},
+  {name:'大气压力',code:'WE-003',cat:'weather',unit:'hPa',mode:'传感器自动',val:'1013',tag:'ok',status:'正常',ind:'全行业',indCat:'multi'},
+  {name:'光照辐射',code:'WE-004',cat:'weather',unit:'W/m²',mode:'传感器自动',val:'486',tag:'ok',status:'正常',ind:'种植',indCat:'plant'},
+  {name:'降水量',code:'WE-005',cat:'weather',unit:'mm',mode:'传感器自动',val:'0',tag:'ok',status:'正常',ind:'全行业',indCat:'multi'},
+  {name:'风速风向',code:'WE-006',cat:'weather',unit:'m/s',mode:'传感器自动',val:'2.5',tag:'ok',status:'正常',ind:'全行业',indCat:'multi'},
+  {name:'CO₂ 浓度',code:'WE-007',cat:'weather',unit:'ppm',mode:'传感器自动',val:'412',tag:'ok',status:'正常',ind:'种植',indCat:'plant'},
+  {name:'GPS 位置',code:'LV-001',cat:'loc',unit:'坐标',mode:'GPS',val:'110.35°E',tag:'ok',status:'正常',ind:'牧业',indCat:'live'},
+  {name:'牲畜活动量',code:'LV-002',cat:'loc',unit:'步/日',mode:'传感器自动',val:'2560',tag:'ok',status:'正常',ind:'牧业',indCat:'live'},
+  {name:'耳标电量',code:'LV-003',cat:'loc',unit:'%',mode:'传感器自动',val:'72',tag:'ok',status:'正常',ind:'牧业',indCat:'live'},
+  {name:'围栏状态',code:'LV-004',cat:'loc',unit:'',mode:'平台配置',val:'正常',tag:'ok',status:'正常',ind:'牧业',indCat:'live'},
+  {name:'增氧机转速',code:'EQ-001',cat:'equip',unit:'rpm',mode:'传感器自动',val:'1200',tag:'ok',status:'正常',ind:'水产',indCat:'aqua'},
+  {name:'管道压力',code:'EQ-002',cat:'equip',unit:'MPa',mode:'传感器自动',val:'0.25',tag:'ok',status:'正常',ind:'水产/种植',indCat:'multi'}
+];
+let poolSelected = new Set();
+let poolFilter = 'all';
+
+function initPoolData() {
+  renderPoolTable();
+  document.getElementById('poolCount').textContent = '已选 0 项';
+  document.getElementById('aiChat').innerHTML = '<div style="color:#90a4ae;font-size:11px;">👋 您好！请勾选您关注的指标，AI 将为您智能推荐最匹配的行业场景和 UI 主题。</div>';
+}
+
+function renderPoolTable() {
+  const filtered = poolFilter === 'all' ? POOL_ITEMS : POOL_ITEMS.filter(p => p.cat === poolFilter);
+  document.getElementById('poolTableBody').innerHTML = filtered.map((p,i) => {
+    const checked = poolSelected.has(p.code) ? 'checked' : '';
+    const globalIdx = POOL_ITEMS.indexOf(p);
+    return '<tr style="cursor:pointer;" onclick="togglePoolItem(\''+p.code+'\',this)">'+
+      '<td><input type="checkbox" ' + checked + ' style="cursor:pointer;width:15px;height:15px;accent-color:#0288d1;"></td>'+
+      '<td>'+p.name+'</td><td style="font-family:monospace;font-size:11px;">'+p.code+'</td>'+
+      '<td>'+{water:'水质',soil:'土壤',weather:'气象',loc:'定位',equip:'设备'}[p.cat]+'</td>'+
+      '<td>'+p.unit+'</td><td>'+p.mode+'</td><td>'+p.val+'</td>'+
+      '<td><span class="tag '+p.tag+'">'+p.status+'</span></td><td>'+p.ind+'</td></tr>';
+  }).join('');
+}
+
+function togglePoolItem(code, row) {
+  if (poolSelected.has(code)) { poolSelected.delete(code); } else { poolSelected.add(code); }
+  renderPoolTable();
+  document.getElementById('poolCount').textContent = '已选 '+poolSelected.size+' 项';
+  if (poolSelected.size > 0) {
+    aiAnalyze();
+  } else {
+    document.getElementById('aiChat').innerHTML = '<div style="color:#90a4ae;font-size:11px;">👋 请勾选指标，AI 将为您推荐行业场景。</div>';
+  }
+}
+
+function filterPool(cat) {
+  poolFilter = cat;
+  document.querySelectorAll('.filter-bar .loc-btn').forEach((b,i) => b.classList.toggle('active',i===['all','water','soil','weather'].indexOf(cat)));
+  renderPoolTable();
+  showToast('已筛选: '+{all:'全部',water:'水质类',soil:'土壤类',weather:'气象类'}[cat]);
+}
+
+function aiAnalyze() {
+  if (poolSelected.size === 0) {
+    document.getElementById('aiChat').innerHTML = '<div style="color:#90a4ae;font-size:11px;">⚠️ 请先勾选指标，AI 才能分析推荐。</div>';
+    return;
+  }
+  // Show thinking animation
+  document.getElementById('aiChat').innerHTML = '<div class="ai-thinking"><span></span><span></span><span></span> <span style="color:#90a4ae;font-size:11px;margin-left:6px;">AI 正在分析您的指标选择...</span></div>';
+
+  setTimeout(() => {
+    const selectedItems = POOL_ITEMS.filter(p => poolSelected.has(p.code));
+    const cats = [...new Set(selectedItems.map(p => p.indCat))];
+    const hasAqua = cats.includes('aqua') || selectedItems.some(p => p.ind==='水产'||p.ind.includes('水产'));
+    const hasPlant = cats.includes('plant') || selectedItems.some(p => p.ind==='种植'||p.ind.includes('种植'));
+    const hasLive = cats.includes('live') || selectedItems.some(p => p.ind==='牧业'||p.ind.includes('牧业'));
+
+    let rec = '', recInd = 0, recColor = '#0288d1';
+    if (hasAqua && !hasPlant && !hasLive) { rec = '水产养殖'; recInd = 0; recColor = '#0288d1'; }
+    else if (hasPlant && !hasAqua && !hasLive) { rec = '智慧种植'; recInd = 1; recColor = '#4caf50'; }
+    else if (hasLive && !hasAqua && !hasPlant) { rec = '智慧牧业'; recInd = 2; recColor = '#ff9800'; }
+    else if (hasAqua && hasPlant) { rec = '水产养殖 + 智慧种植（综合型）'; recInd = -1; recColor = '#7b1fa2'; }
+    else if (hasAqua && hasLive) { rec = '水产养殖 + 智慧牧业（综合型）'; recInd = -1; recColor = '#7b1fa2'; }
+    else if (hasPlant && hasLive) { rec = '智慧种植 + 智慧牧业（综合型）'; recInd = -1; recColor = '#7b1fa2'; }
+    else { rec = '全行业综合场景'; recInd = -1; recColor = '#0288d1'; }
+
+    const chatEl = document.getElementById('aiChat');
+    if (recInd >= 0) {
+      const indNames = ['水产养殖','智慧种植','智慧牧业'];
+      chatEl.innerHTML = '<div style="font-size:12px;">✅ 分析完成！根据您勾选的 <b>'+poolSelected.size+'</b> 项指标，AI 判断您的业务场景最匹配：</div>'+
+        '<div style="margin:8px 0;padding:8px 12px;border-radius:6px;background:'+recColor+';color:#fff;font-size:13px;font-weight:600;"> '+indNames[recInd]+'</div>'+
+        '<div style="font-size:11px;color:#607d8b;">推荐理由：所选指标（'+selectedItems.map(p=>p.name).slice(0,3).join('、')+'等）属于典型 '+indNames[recInd]+' 监测体系。<br>建议切换至对应行业 UI 获取最佳体验。</div>'+
+        '<div style="margin-top:6px;font-size:10px;color:#90a4ae;">💡 点击下方标签可快速切换行业</div>';
+
+      // Highlight the recommended tag
+      document.querySelectorAll('#aiTags .ai-tag').forEach((t,i) => {
+        t.classList.toggle('active', i === recInd);
+      });
+    } else {
+      chatEl.innerHTML = '<div style="font-size:12px;">✅ 分析完成！您选择了跨行业指标组合：</div>'+
+        '<div style="margin:8px 0;padding:8px 12px;border-radius:6px;background:'+recColor+';color:#fff;font-size:13px;font-weight:600;"> '+rec+'</div>'+
+        '<div style="font-size:11px;color:#607d8b;">所选指标覆盖多行业领域，建议使用 <b>综合大屏模式</b> 或切换到具体行业查看对应 UI。</div>';
+    }
+    showToast('AI 分析完成，推荐场景: '+rec);
+  }, 1800);
+}
+
+function applyAI(ind) {
+  const map = {aqua:0, plant:1, live:2};
+  const idx = map[ind];
+  if (idx === undefined) return;
+  // Click the industry switch button
+  const btns = document.querySelectorAll('.ind-selector .ind-options .ind-btn');
+  if (btns[idx]) btns[idx].click();
+  document.getElementById('aiChat').innerHTML = '<div style="color:#4caf50;font-size:12px;">✅ 已为您切换到 <b>'+IND[idx].name+'</b> 行业场景！仪表盘、参数、设备已同步更新。</div>';
+  showToast('已切换到: '+IND[idx].name+' 行业');
 }
 
 // PAGE 3: 设备管理
