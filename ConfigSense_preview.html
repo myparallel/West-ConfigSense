@@ -225,6 +225,21 @@ table .tag.crit { background:#ffebee; color:#f44336; }
 #miniMap { height:170px; background:#e8eaf6; }
 .leaflet-container { background:#e8eaf6; }
 
+/* Zone Map page */
+.zone-layout { display:flex; gap:14px; height:calc(100vh - 220px); min-height:400px; }
+.zone-map-area { flex:1; border-radius:10px; overflow:hidden; border:1px solid #e4e9f2; position:relative; }
+.zone-map-area #zoneMap { width:100%; height:100%; min-height:400px; }
+.zone-sidebar { width:300px; display:flex; flex-direction:column; gap:8px; overflow-y:auto; flex-shrink:0; }
+.zone-sidebar .zs-header { font-size:13px; color:#37474f; font-weight:600; padding:8px 12px; background:#fff; border:1px solid #e4e9f2; border-radius:8px; display:flex; align-items:center; gap:8px; }
+.zone-sidebar .zs-header .chip { font-size:10px; background:#e3f2fd; color:#0288d1; padding:1px 8px; border-radius:4px; }
+.zone-sidebar .zs-params { display:flex; flex-direction:column; gap:6px; }
+.zone-sidebar .zp-card { background:#fff; border:1px solid #e4e9f2; border-radius:8px; padding:10px 12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:.15s; }
+.zone-sidebar .zp-card:active { background:#f5faff; }
+.zone-sidebar .zp-card .zp-left .zp-label { font-size:11px; color:#90a4ae; }
+.zone-sidebar .zp-card .zp-left .zp-desc { font-size:10px; color:#b0bec5; }
+.zone-sidebar .zp-card .zp-val { font-size:18px; font-weight:700; font-family:'Helvetica Neue',monospace; }
+.zone-sidebar .zp-card .zp-unit { font-size:10px; color:#90a4ae; }
+
 @media (max-width:1100px) {
   .params-grid { grid-template-columns:repeat(2,1fr); }
   .main-chart-grid,.bottom-grid { grid-template-columns:1fr; }
@@ -243,7 +258,7 @@ table .tag.crit { background:#ffebee; color:#f44336; }
     </div>
     <nav id="sidebarNav">
       <a class="active" data-page="0"><span class="ico"> </span>总览仪表盘</a>
-      <a data-page="1"><span class="ico"> </span>水质监测</a>
+      <a data-page="1"><span class="ico"> </span>分区监测</a>
       <a data-page="2"><span class="ico"> </span>指标数据池 <span class="tag">28</span></a>
       <a data-page="3"><span class="ico"> </span>设备管理</a>
       <a data-page="4"><span class="ico"> </span>设备控制</a>
@@ -326,12 +341,17 @@ table .tag.crit { background:#ffebee; color:#f44336; }
         </div>
       </div>
 
-      <!-- ===== PAGE 1: 水质监测 ===== -->
+      <!-- ===== PAGE 1: 分区监测 ===== -->
       <div class="page" data-page="1">
-        <div class="curved-header"><h2> 水质监测 · 实时数据</h2><span class="sub">传感器每30秒自动上报 · 点击参数查看记录</span></div>
-        <div class="loc-bar" id="waterLocBar"></div>
-        <div class="section-title"> 监测参数详情</div>
-        <div id="waterParamList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div class="curved-header"><h2> 分区监测 · 设备地图</h2><span class="sub">点击地图设备查看实时指标 · 点击指标查看历史记录</span></div>
+        <div class="zone-layout">
+          <div class="zone-map-area"><div id="zoneMap"></div></div>
+          <div class="zone-sidebar" id="zoneSidebar">
+            <div class="zs-header"> 设备详情 <span class="chip">点击地图设备</span></div>
+            <div id="zoneDeviceInfo" style="font-size:12px;color:#90a4ae;padding:12px;text-align:center;background:#fff;border:1px solid #e4e9f2;border-radius:8px;">请点击地图上的设备查看实时指标</div>
+            <div class="zs-params" id="zoneParams"></div>
+          </div>
+        </div>
       </div>
 
       <!-- ===== PAGE 2: 指标数据池 ===== -->
@@ -516,7 +536,7 @@ const IND_DATA = {
     locPrefix:'塘口',
     locs:['1号塘口','2号塘口','3号塘口','4号塘口','5号塘口'],
     data:[{do:6.82,temp:26.3,ph:7.82,sal:28.5,nh3:0.05,nitrite:0.02,turb:3.2,orp:185},{do:6.51,temp:26.8,ph:7.90,sal:29.1,nh3:0.08,nitrite:0.03,turb:4.1,orp:192},{do:7.10,temp:25.9,ph:7.65,sal:27.8,nh3:0.12,nitrite:0.04,turb:2.8,orp:178},{do:6.93,temp:26.5,ph:7.88,sal:28.9,nh3:0.06,nitrite:0.02,turb:3.6,orp:188},{do:6.70,temp:27.1,ph:7.75,sal:28.2,nh3:0.07,nitrite:0.03,turb:3.0,orp:190}],
-    devices:[{name:'溶氧传感器 WE-T123',status:'running'},{name:'6合1水质监测仪',status:'running'},{name:'增氧机 #1',status:'running'},{name:'增氧机 #2',status:'off'},{name:'水泵',status:'running'},{name:'投料机',status:'standby'},{name:'液位传感器',status:'running'},{name:'网关 WE-C300',status:'running'}],
+    devices:[{name:'溶氧传感器 WE-T123',status:'running',zone:0},{name:'6合1水质监测仪',status:'running',zone:0},{name:'增氧机 #1',status:'running',zone:1},{name:'增氧机 #2',status:'off',zone:1},{name:'水泵',status:'running',zone:2},{name:'投料机',status:'standby',zone:2},{name:'液位传感器',status:'running',zone:3},{name:'网关 WE-C300',status:'running',zone:0}],
     trendTitle:'水质参数变化趋势',farm:{name:'海南世东水产',area:'120 亩',stock:'38.5 吨',feed:'860 kg',sensors:'24/26'},
     alarms:[{level:'p0',name:'1号塘 · 溶解氧偏低',desc:'03:15 · 值:3.85 mg/L',badge:'pending',badgeText:'未处理'},{level:'p1',name:'2号塘 · 温度偏高',desc:'14:30 · 值:33.2 °C',badge:'resolved',badgeText:'已恢复'},{level:'p1',name:'3号塘 · 氨氮超标',desc:'22:00 · 值:0.35 mg/L',badge:'resolved',badgeText:'已恢复'}],
     ctrls:[{name:'增氧机',status:'运行中 1200rpm',statusCls:'running'},{name:'水泵',status:'进水模式',statusCls:'running'},{name:'投料机',status:'已停机',statusCls:'off'},{name:'照明',status:'已关闭',statusCls:'off'},{name:'温度调节',status:'恒温 26°C',statusCls:'running'},{name:'灯控',status:'已关闭',statusCls:'off'}]
@@ -539,7 +559,7 @@ const IND_DATA = {
     locPrefix:'地块',
     locs:['1号地块','2号地块','3号地块','4号地块','5号地块'],
     data:[{moist:52.4,stemp:22.8,sph:6.8,ec:1.28,npk:45,light:486,co2:412,press:1013},{moist:48.2,stemp:23.5,sph:6.5,ec:1.42,npk:52,light:523,co2:398,press:1011},{moist:55.8,stemp:21.9,sph:7.0,ec:1.15,npk:38,light:445,co2:425,press:1014},{moist:60.1,stemp:22.1,sph:6.7,ec:1.35,npk:48,light:468,co2:408,press:1012},{moist:44.5,stemp:24.2,sph:6.9,ec:1.52,npk:55,light:510,co2:390,press:1010}],
-    devices:[{name:'7合1土壤传感器',status:'running'},{name:'气象站',status:'running'},{name:'灌溉阀 #1',status:'running'},{name:'灌溉阀 #2',status:'off'},{name:'温室风机',status:'running'},{name:'卷帘机',status:'standby'},{name:'补光灯',status:'off'},{name:'网关 WE-C300',status:'running'}],
+    devices:[{name:'7合1土壤传感器',status:'running',zone:0},{name:'气象站',status:'running',zone:0},{name:'灌溉阀 #1',status:'running',zone:1},{name:'灌溉阀 #2',status:'off',zone:1},{name:'温室风机',status:'running',zone:2},{name:'卷帘机',status:'standby',zone:2},{name:'补光灯',status:'off',zone:3},{name:'网关 WE-C300',status:'running',zone:0}],
     trendTitle:'土壤与环境参数趋势',farm:{name:'海南世东种植园',area:'80 亩',stock:'—',feed:'水肥 120L',sensors:'18/20'},
     alarms:[{level:'p1',name:'1号地块 · 土壤湿度过低',desc:'06:00 · 值:28.5%',badge:'resolved',badgeText:'已灌溉'},{level:'p2',name:'2号地块 · 光照偏高',desc:'12:30 · 值:823 W/m²',badge:'pending',badgeText:'未处理'},{level:'p1',name:'3号地块 · EC偏高',desc:'昨日 · 值:1.65',badge:'resolved',badgeText:'已处理'}],
     ctrls:[{name:'灌溉阀',status:'运行中',statusCls:'running'},{name:'施肥泵',status:'运行中',statusCls:'running'},{name:'温室风机',status:'运行中',statusCls:'running'},{name:'卷帘机',status:'已关闭',statusCls:'off'},{name:'补光灯',status:'已关闭',statusCls:'off'},{name:'喷滴灌',status:'待机',statusCls:'standby'}]
@@ -562,7 +582,7 @@ const IND_DATA = {
     locPrefix:'牧场',
     locs:['1号牧场','2号牧场','3号牧场','4号牧场','5号牧场'],
     data:[{gps:98,btemp:38.5,step:2560,fence:'正常',batt:72,sig:-58,count:128,alert:0},{gps:96,btemp:38.8,step:3120,fence:'正常',batt:65,sig:-62,count:85,alert:1},{gps:99,btemp:38.2,step:1890,fence:'正常',batt:80,sig:-55,count:156,alert:0},{gps:97,btemp:39.0,step:2780,fence:'告警',batt:45,sig:-70,count:72,alert:2},{gps:95,btemp:38.6,step:2200,fence:'正常',batt:55,sig:-65,count:110,alert:0}],
-    devices:[{name:'GPS 耳标 WE-B30',status:'running'},{name:'GPS 追踪器 GT080',status:'running'},{name:'围栏基站 #1',status:'running'},{name:'围栏基站 #2',status:'running'},{name:'气象站',status:'running'},{name:'项圈 #A01',status:'running'},{name:'项圈 #A02',status:'standby'},{name:'网关 WE-C300',status:'running'}],
+    devices:[{name:'GPS 耳标 WE-B30',status:'running',zone:0},{name:'GPS 追踪器 GT080',status:'running',zone:0},{name:'围栏基站 #1',status:'running',zone:1},{name:'围栏基站 #2',status:'running',zone:1},{name:'气象站',status:'running',zone:2},{name:'项圈 #A01',status:'running',zone:2},{name:'项圈 #A02',status:'standby',zone:3},{name:'网关 WE-C300',status:'running',zone:0}],
     trendTitle:'牧业健康指标趋势',farm:{name:'海南世东牧场',area:'500 亩',stock:'551 头',feed:'草料 2.8t',sensors:'16/16'},
     alarms:[{level:'p0',name:'2号牧场 · GPS 越界告警',desc:'13:20 · 1头牛离开围栏',badge:'pending',badgeText:'未处理'},{level:'p1',name:'4号牧场 · 耳标低电量',desc:'10:00 · 电量 15%',badge:'resolved',badgeText:'已更换'},{level:'p2',name:'1号牧场 · 围栏基站离线',desc:'昨日 22:00',badge:'resolved',badgeText:'已恢复'}],
     ctrls:[{name:'围栏基站',status:'运行中',statusCls:'running'},{name:'语音驱赶',status:'待命',statusCls:'standby'},{name:'GPS 追踪',status:'运行中',statusCls:'running'},{name:'电子围栏',status:'已启用',statusCls:'running'},{name:'项圈广播',status:'已关闭',statusCls:'off'},{name:'报警联动',status:'已启用',statusCls:'running'}]
@@ -587,7 +607,7 @@ function showToast(msg) {
 function closeOverlay() { document.getElementById('detailOverlay').classList.remove('open'); }
 
 // SIDEBAR
-const PAGE_TITLES = ['总览仪表盘','水质监测','指标数据池','设备管理','设备控制','视频监控','历史数据','报警中心','设备绑定','数字护照','账号管理'];
+const PAGE_TITLES = ['总览仪表盘','分区监测','指标数据池','设备管理','设备控制','视频监控','历史数据','报警中心','设备绑定','数字护照','账号管理'];
 document.querySelectorAll('#sidebarNav a[data-page]').forEach(el => {
   el.addEventListener('click', function() {
     document.querySelectorAll('#sidebarNav a').forEach(a => a.classList.remove('active'));
@@ -763,21 +783,80 @@ function openParamDetail(key) {
   document.getElementById('detailOverlay').classList.add('open');
 }
 
-// PAGE 1: 水质监测
+// PAGE 1: 分区监测
+let zoneMap = null, zoneMarkers = [], selectedDevice = null;
+
 function refreshWater() {
   const ind = IND[currentInd];
-  document.getElementById('waterLocBar').innerHTML = ind.locs.map((l,i) =>
-    `<div class="loc-btn ${i===currentLoc?'active':''}" onclick="document.querySelectorAll('#waterLocBar .loc-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');currentLoc=${i};refreshWater();showToast('已选择: ${l}')"><span class="loc-dot"></span>${l}</div>`
-  ).join('');
-  const d = ind.data[currentLoc] || ind.data[0];
-  document.getElementById('waterParamList').innerHTML = ind.params.map(p => {
+  // Rebuild the zone map
+  if (zoneMap) { zoneMap.remove(); zoneMap = null; }
+  zoneMarkers = [];
+  selectedDevice = null;
+  document.getElementById('zoneDeviceInfo').innerHTML = '请点击地图上的设备查看实时指标';
+  document.getElementById('zoneParams').innerHTML = '';
+
+  const container = document.getElementById('zoneMap');
+  const rect = container.getBoundingClientRect();
+  zoneMap = L.map('zoneMap', {zoomControl:true, attributionControl:false}).setView([20.0225,110.354], 14);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {maxZoom:18}).addTo(zoneMap);
+
+  const baseLat = 20.02 + currentInd * 0.05;
+  const baseLng = 110.35 + currentInd * 0.03;
+  const bounds = [];
+
+  // Draw zones as circles
+  ind.locs.forEach((l,i) => {
+    const lat = baseLat + i * 0.008;
+    const lng = baseLng + i * 0.006;
+    bounds.push([lat,lng]);
+    // Zone boundary
+    L.circle([lat,lng], {radius: 50, color: i===0?'#0288d1':'#90a4ae', fillColor: i===0?'rgba(2,136,209,0.06)':'rgba(144,164,174,0.04)', fillOpacity: 1, weight: 1, dashArray: '5,5' }).addTo(zoneMap);
+    // Zone label
+    L.marker([lat,lng], {icon: L.divIcon({className:'',html:'<div style="font-size:11px;color:#607d8b;font-weight:600;white-space:nowrap;">'+l+'</div>',iconSize:[80,20],iconAnchor:[40,10]})}).addTo(zoneMap);
+  });
+
+  // Place device markers
+  ind.devices.forEach((d,i) => {
+    const zi = d.zone || 0;
+    const lat = baseLat + zi * 0.008 + (Math.random()-0.5)*0.004;
+    const lng = baseLng + zi * 0.006 + (Math.random()-0.5)*0.004;
+    const color = d.status==='running'?'#4caf50':d.status==='standby'?'#ff9800':d.status==='off'?'#9e9e9e':'#f44336';
+    const ico = L.divIcon({
+      className: '',
+      html: '<div style="width:12px;height:12px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer;" title="'+d.name+'"></div>',
+      iconSize: [12,12], iconAnchor: [6,6]
+    });
+    const mk = L.marker([lat,lng], {icon:ico}).addTo(zoneMap);
+    mk._devIdx = i;
+    mk.on('click', () => selectZoneDevice(i));
+    zoneMarkers.push(mk);
+  });
+
+  if (bounds.length) zoneMap.fitBounds(bounds, {padding:[40,40], maxZoom:16});
+  setTimeout(() => zoneMap.invalidateSize(), 300);
+}
+
+function selectZoneDevice(idx) {
+  const ind = IND[currentInd];
+  const dev = ind.devices[idx];
+  selectedDevice = idx;
+  const d = ind.data[dev.zone || 0] || ind.data[0];
+
+  // Highlight marker
+  zoneMarkers.forEach((mk,i) => {
+    const el = mk.getElement();
+    if (el) el.style.transform = i===idx ? 'scale(1.6)' : 'scale(1)';
+  });
+
+  document.getElementById('zoneDeviceInfo').innerHTML = '<div style="font-size:13px;color:#37474f;font-weight:600;">'+dev.name+'</div><div style="font-size:11px;color:#90a4ae;margin-top:2px;">'+ind.locs[dev.zone||0]+' · '+(dev.status==='running'?'运行中':dev.status==='standby'?'待机':'已关闭')+'</div>';
+
+  document.getElementById('zoneParams').innerHTML = ind.params.map(p => {
     const v = d[p.key];
     const dv = typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(v<10?2:1)) : v;
-    return `<div class="param-card ${p.cls}" style="display:flex;align-items:center;padding:12px 16px;text-align:left;" onclick="openParamDetail('${p.key}')">
-      <div style="flex:1;"><div class="p-label" style="text-align:left;">${p.label}</div><div style="font-size:11px;color:#b0bec5;margin-top:2px;">${p.unit} · ${ind.locs[currentLoc]}</div></div>
-      <div style="text-align:right;"><div class="p-value" style="font-size:22px;text-align:right;">${dv}</div></div>
-    </div>`;
+    return '<div class="zp-card" onclick="openParamDetail(\''+p.key+'\')"><div class="zp-left"><div class="zp-label">'+p.label+'</div><div class="zp-desc">'+p.unit+'</div></div><div><span class="zp-val" style="color:'+p.color+'">'+dv+'</span> <span class="zp-unit">'+p.unit+'</span></div></div>';
   }).join('');
+
+  showToast('已选择: '+dev.name);
 }
 
 // PAGE 3: 设备管理
