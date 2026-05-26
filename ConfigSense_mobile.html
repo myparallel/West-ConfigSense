@@ -8,16 +8,17 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:15px;background:#f0f5fe;color:#1a2a3a;overflow:hidden;height:100vh}
 .app{height:100vh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative;background:#f0f5fe}
-.banner{height:120px;flex-shrink:0;position:relative;overflow:hidden}
-.banner .bg{position:absolute;inset:0;background-size:cover;background-position:center;background-image:url('https://picsum.photos/seed/aqua1/960/240');transition:background-image .6s}
-.banner .ov{position:absolute;inset:0;background:linear-gradient(135deg,rgba(1,87,155,.85) 0%,rgba(2,136,209,.5) 50%,rgba(1,87,155,.7) 100%)}
-.banner .ct{position:relative;z-index:2;height:100%;display:flex;align-items:flex-end;justify-content:space-between;padding:0 12px 8px}
-.banner .ct .logo img{height:100px;width:auto;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
-.banner .ct .right{text-align:right}
-.banner .ct .ind{padding:5px 14px;border-radius:20px;background:rgba(1,87,155,.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.2);box-shadow:0 2px 10px rgba(0,0,0,.15)}
-.banner .ct .ind:active{background:rgba(1,87,155,.9);transform:scale(.95)}
-.banner .ct .ind .arr{font-size:10px;color:rgba(255,255,255,.8);transition:transform .3s}
-.banner .ct .sub{font-size:11px;color:#fff;margin-top:3px;padding-right:4px;text-shadow:0 1px 6px rgba(0,0,0,.35);font-weight:500}
+.banner{height:130px;flex-shrink:0;position:relative;overflow:hidden}
+.banner .bg{position:absolute;inset:0;background-size:cover;background-position:center;background-image:linear-gradient(135deg,#0d47a1,#0288d1,#26c6da);transition:background-image .6s}
+.banner .ov{position:absolute;inset:0;background:linear-gradient(135deg,#01579b 0%,rgba(2,136,209,.65) 50%,#01579b 100%)}
+.banner .ct{position:relative;z-index:2;height:100%;display:flex;align-items:flex-end;justify-content:space-between;padding:0 12px 6px}
+.banner .ct .logo{height:100%;display:flex;align-items:center;padding-bottom:4px}
+.banner .ct .logo img{height:115px;width:auto;display:block;filter:drop-shadow(0 2px 10px rgba(0,0,0,.5))}
+.banner .ct .right{text-align:right;padding-bottom:4px}
+.banner .ct .ind{padding:6px 16px;border-radius:22px;background:#01579b;border:1.5px solid rgba(255,255,255,.35);display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;color:#fff;font-size:14px;font-weight:700;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.banner .ct .ind:active{transform:scale(.95)}
+.banner .ct .ind .arr{font-size:10px;color:rgba(255,255,255,.8)}
+.banner .ct .sub{font-size:11px;color:#fff;margin-top:3px;padding-right:2px;font-weight:500;text-shadow:0 1px 4px rgba(0,0,0,.3)}
 .pages{flex:1;overflow:hidden;position:relative}
 .page{position:absolute;inset:0;overflow-y:auto;background:#f0f5fe;opacity:0;pointer-events:none;transition:opacity .2s;padding:8px 10px}
 .page.active{opacity:1;pointer-events:auto}
@@ -146,7 +147,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Micr
 <script>
 // ===== DATA =====
 var IND=[
-{name:'水产养殖',pref:'养殖',lp:'塘口',banner:'https://picsum.photos/seed/aquafarm1/960/240',sub:'水质监测 · 智能增氧 · 溶氧管理',cols:['#0288d1','#ff7043','#7b1fa2','#00897b','#ef6c00','#d32f2f','#6d4c41','#546e7a'],
+{name:'水产养殖',pref:'养殖',lp:'塘口',banner:'https://picsum.photos/seed/oceanview/960/260',sub:'水质监测 · 智能增氧 · 溶氧管理',cols:['#0288d1','#ff7043','#7b1fa2','#00897b','#ef6c00','#d32f2f','#6d4c41','#546e7a'],
 par:[{k:'do',l:'DO',u:'mg/L',c:'#0288d1'},{k:'temp',l:'水温',u:'°C',c:'#ff7043'},{k:'ph',l:'pH',u:'pH',c:'#7b1fa2'},{k:'sal',l:'盐度',u:'‰',c:'#00897b'},{k:'nh3',l:'氨氮',u:'mg/L',c:'#ef6c00'},{k:'nt',l:'亚硝酸盐',u:'mg/L',c:'#d32f2f'}],
 loc:['1号塘口','2号塘口','3号塘口','4号塘口','5号塘口'],
 val:[{do:6.82,temp:26.3,ph:7.82,sal:28.5,nh3:0.05,nt:0.02},{do:6.51,temp:26.8,ph:7.90,sal:29.1,nh3:0.08,nt:0.03},{do:7.10,temp:25.9,ph:7.65,sal:27.8,nh3:0.12,nt:0.04},{do:6.93,temp:26.5,ph:7.88,sal:28.9,nh3:0.06,nt:0.02},{do:6.70,temp:27.1,ph:7.75,sal:28.2,nh3:0.07,nt:0.03}],
@@ -154,7 +155,7 @@ dev:[{n:'溶氧传感器',s:1},{n:'6合1监测仪',s:1},{n:'增氧机 #1',s:1},{
 ctl:[{n:'增氧机',s:'运行中',c:1},{n:'循环水泵',s:'运行中',c:1},{n:'自动投料机',s:'已停机',c:0},{n:'塘口照明',s:'已关闭',c:0}],
 alm:[{l:0,n:'1号塘DO偏低',d:'03:15 · 3.85mg/L',b:0},{l:1,n:'2号塘温度偏高',d:'14:30 · 33.2°C',b:1},{l:1,n:'3号塘氨氮超标',d:'22:00 · 0.35',b:1}]
 },
-{name:'智慧种植',pref:'种植',lp:'地块',banner:'https://picsum.photos/seed/greenfarm1/960/240',sub:'土壤监测 · 灌溉控制 · 温室环控',cols:['#0288d1','#ff7043','#7b1fa2','#ff8f00','#689f38','#ef6c00','#546e7a','#6d4c41'],
+{name:'智慧种植',pref:'种植',lp:'地块',banner:'https://picsum.photos/seed/farmland/960/260',sub:'土壤监测 · 灌溉控制 · 温室环控',cols:['#0288d1','#ff7043','#7b1fa2','#ff8f00','#689f38','#ef6c00','#546e7a','#6d4c41'],
 par:[{k:'moist',l:'土壤湿度',u:'%',c:'#0288d1'},{k:'stemp',l:'土温',u:'°C',c:'#ff7043'},{k:'sph',l:'土壤pH',u:'pH',c:'#7b1fa2'},{k:'ec',l:'EC',u:'mS/cm',c:'#ff8f00'},{k:'npk',l:'氮含量',u:'ppm',c:'#689f38'},{k:'light',l:'光照',u:'W/m²',c:'#ef6c00'}],
 loc:['1号地块','2号地块','3号地块','4号地块','5号地块'],
 val:[{moist:52.4,stemp:22.8,sph:6.8,ec:1.28,npk:45,light:486},{moist:48.2,stemp:23.5,sph:6.5,ec:1.42,npk:52,light:523},{moist:55.8,stemp:21.9,sph:7.0,ec:1.15,npk:38,light:445},{moist:60.1,stemp:22.1,sph:6.7,ec:1.35,npk:48,light:468},{moist:44.5,stemp:24.2,sph:6.9,ec:1.52,npk:55,light:510}],
@@ -162,7 +163,7 @@ dev:[{n:'7合1土壤传感器',s:1},{n:'气象监测站',s:1},{n:'灌溉阀 #1',
 ctl:[{n:'灌溉阀',s:'运行中',c:1},{n:'水肥一体泵',s:'运行中',c:1},{n:'温室风机',s:'运行中',c:1},{n:'卷帘机',s:'已关闭',c:0}],
 alm:[{l:1,n:'1号地块湿度过低',d:'06:00 · 28.5%',b:1},{l:2,n:'2号地块光照偏高',d:'12:30 · 823W',b:0},{l:1,n:'3号地块EC偏高',d:'昨日 · 1.65',b:1}]
 },
-{name:'智慧牧业',pref:'牧业',lp:'牧场',banner:'https://picsum.photos/seed/pasture1/960/240',sub:'GPS定位 · 电子围栏 · 健康监测',cols:['#4caf50','#ff7043','#ff8f00','#4caf50','#ef6c00','#546e7a','#0288d1','#d32f2f'],
+{name:'智慧牧业',pref:'牧业',lp:'牧场',banner:'https://picsum.photos/seed/grassland/960/260',sub:'GPS定位 · 电子围栏 · 健康监测',cols:['#4caf50','#ff7043','#ff8f00','#4caf50','#ef6c00','#546e7a','#0288d1','#d32f2f'],
 par:[{k:'gps',l:'GPS在线',u:'%',c:'#4caf50'},{k:'btemp',l:'体温',u:'°C',c:'#ff7043'},{k:'step',l:'活动量',u:'步',c:'#ff8f00'},{k:'fence',l:'围栏',u:'',c:'#4caf50'},{k:'batt',l:'耳标电量',u:'%',c:'#ef6c00'},{k:'sig',l:'信号',u:'dBm',c:'#546e7a'}],
 loc:['1号牧场','2号牧场','3号牧场','4号牧场','5号牧场'],
 val:[{gps:98,btemp:38.5,step:2560,fence:'正常',batt:72,sig:-58},{gps:96,btemp:38.8,step:3120,fence:'正常',batt:65,sig:-62},{gps:99,btemp:38.2,step:1890,fence:'正常',batt:80,sig:-55},{gps:97,btemp:39.0,step:2780,fence:'告警',batt:45,sig:-70},{gps:95,btemp:38.6,step:2200,fence:'正常',batt:55,sig:-65}],
@@ -182,7 +183,7 @@ function showIndPicker(){penI=curI;var c=document.querySelectorAll('.ind-modal .
 function hideInd(){$('indModal').classList.remove('show')}
 function pickInd(i){penI=i;var c=document.querySelectorAll('.ind-modal .card');for(var j=0;j<c.length;j++)c[j].className=j===i?'card active':'card'}
 function confirmInd(){if(penI!==curI){curI=penI;curL=0;updateBanner();goTab(curT);showToast('已切换到: '+IND[curI].name)}hideInd()}
-function updateBanner(){var d=IND[curI];$('bannerBg').style.backgroundImage='url('+d.banner+')';$('indName').textContent=d.name;$('indSub').textContent=d.sub}
+function updateBanner(){var d=IND[curI];$('bannerBg').style.backgroundImage='linear-gradient(135deg,#0d47a1,rgba(2,136,209,.6),rgba(38,198,218,.3)),url('+d.banner+')';$('indName').textContent=d.name;$('indSub').textContent=d.sub}
 // Home
 function refreshHome(){var d=IND[curI];$('homeTitle').textContent=d.pref+'实时总览';var l=$('locRow');l.innerHTML='';for(var i=0;i<d.loc.length;i++){var ch=document.createElement('span');ch.className=i===curL?'chip active':'chip';ch.textContent=d.loc[i];ch.onclick=function(j){return function(){curL=j;refreshHome()}}(i);l.appendChild(ch)}var dt=d.val[curL]||d.val[0];var s=$('stats');s.innerHTML='<div class="stat"><div class="v" style="color:#0288d1">'+d.loc.length+'个</div><div class="l">'+d.lp+'数</div></div><div class="stat"><div class="v" style="color:#4caf50">'+d.dev.filter(function(x){return x.s===1}).length+'/'+d.dev.length+'</div><div class="l">设备在线</div></div><div class="stat"><div class="v" style="color:#ff9800">'+d.alm.filter(function(x){return x.b===0}).length+'</div><div class="l">报警</div></div><div class="stat"><div class="v" style="color:#7b1fa2">'+d.par.length+'</div><div class="l">指标</div></div>';var pg=$('params');pg.innerHTML='';for(var i=0;i<d.par.length;i++){var p=d.par[i],v=dt[p.k],dv=typeof v==='number'?(Number.isInteger(v)?v:v.toFixed(2)):v;var pc=document.createElement('div');pc.className='param';pc.innerHTML='<div class="bar" style="background:'+p.c+'"></div><div class="pl">'+p.l+'</div><div class="pv" style="color:'+p.c+'">'+dv+'</div><div class="pu">'+p.u+'</div><div class="ps ok">正常</div>';pc.onclick=function(k){return function(){openDetail(k)}}(p.k);pg.appendChild(pc)}var ds=$('devStrip');ds.innerHTML='';for(var i=0;i<d.dev.length;i++){var di=document.createElement('div');di.style.cssText='background:#fff;border:1px solid #e4e9f2;border-radius:7px;padding:6px 10px;min-width:85px;text-align:center;flex-shrink:0;cursor:pointer';di.innerHTML='<div style="font-size:10px;color:#37474f;white-space:nowrap">'+d.dev[i].n+'</div><div style="font-size:8px;margin-top:2px;padding:1px 6px;border-radius:4px;display:inline-block;background:'+(d.dev[i].s===1?'#e8f5e9':'#f5f5f5')+';color:'+(d.dev[i].s===1?'#4caf50':'#9e9e9e')+'">'+(d.dev[i].s===1?'运行中':'停止')+'</div>';ds.appendChild(di)}}
 // Monitor
