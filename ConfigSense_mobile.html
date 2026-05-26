@@ -356,11 +356,11 @@ setInterval(()=>{const n=new Date();},1000);
 
 function switchTab(i){
   curTab=i;
-  document.querySelectorAll('.tab-item').forEach((t,j)=>t.classList.toggle('active',j===i));
-  const pages=['page-home','page-monitor','page-device','page-data','page-profile'];
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById(pages[i]).classList.add('active');
-  if(i===0)refreshHome();if(i===1)refreshMonitor();if(i===2)refreshDevice();if(i===3)refreshData();
+  try{document.querySelectorAll('.tab-item').forEach((t,j)=>t.classList.toggle('active',j===i));}catch(e){}
+  const pids=['page-home','page-monitor','page-device','page-data','page-profile'];
+  try{document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));}catch(e){}
+  try{document.getElementById(pids[i]).classList.add('active');}catch(e){}
+  try{if(i===0)refreshHome();if(i===1)refreshMonitor();if(i===2)refreshDevice();if(i===3)refreshData();}catch(e){}
 }
 
 // Industry Picker
@@ -385,9 +385,9 @@ function updateBanner(){try{
 }catch(e){}}
 
 // Sub Nav
-document.querySelectorAll('#monSubNav .sn-item').forEach(el=>{el.addEventListener('click',function(){document.querySelectorAll('#monSubNav .sn-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.getElementById('monZone').style.display=this.dataset.mon==='0'?'':'none';document.getElementById('monPool').style.display=this.dataset.mon==='1'?'':'none';if(this.dataset.mon==='1')refreshPool();});});
-document.querySelectorAll('#devSubNav .sn-item').forEach(el=>{el.addEventListener('click',function(){document.querySelectorAll('#devSubNav .sn-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.getElementById('devList').style.display=this.dataset.dev==='0'?'':'none';document.getElementById('devCtrl').style.display=this.dataset.dev==='1'?'':'none';});});
-document.querySelectorAll('#dataSubNav .sn-item').forEach(el=>{el.addEventListener('click',function(){document.querySelectorAll('#dataSubNav .sn-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.getElementById('dataPass').style.display=this.dataset.dat==='0'?'':'none';document.getElementById('dataAlarm').style.display=this.dataset.dat==='1'?'':'none';document.getElementById('dataHist').style.display=this.dataset.dat==='2'?'':'none';if(this.dataset.dat==='1')refreshAlarm();if(this.dataset.dat==='2')refreshHist();});});
+try{document.querySelectorAll('#monSubNav .sn-item').forEach(el=>{el.addEventListener('click',function(){document.querySelectorAll('#monSubNav .sn-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.getElementById('monZone').style.display=this.dataset.mon==='0'?'':'none';document.getElementById('monPool').style.display=this.dataset.mon==='1'?'':'none';if(this.dataset.mon==='1')refreshPool();});});}catch(e){}
+try{document.querySelectorAll('#devSubNav .sn-item').forEach(el=>{el.addEventListener('click',function(){document.querySelectorAll('#devSubNav .sn-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.getElementById('devList').style.display=this.dataset.dev==='0'?'':'none';document.getElementById('devCtrl').style.display=this.dataset.dev==='1'?'':'none';});});}catch(e){}
+try{document.querySelectorAll('#dataSubNav .sn-item').forEach(el=>{el.addEventListener('click',function(){document.querySelectorAll('#dataSubNav .sn-item').forEach(e=>e.classList.remove('active'));this.classList.add('active');document.getElementById('dataPass').style.display=this.dataset.dat==='0'?'':'none';document.getElementById('dataAlarm').style.display=this.dataset.dat==='1'?'':'none';document.getElementById('dataHist').style.display=this.dataset.dat==='2'?'':'none';if(this.dataset.dat==='1')refreshAlarm();if(this.dataset.dat==='2')refreshHist();});});}catch(e){}
 
 function refreshHome(){
   const ind=IND[curInd];
