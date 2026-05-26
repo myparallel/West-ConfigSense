@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConfigSense 灵配智控 · 智慧物联应用平台</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif; background:#f0f5fe; color:#1a2a3a; overflow:hidden; height:100vh; font-size:15px; }
+.app { display:flex; height:100vh; }
+
+/* Sidebar */
+.sidebar { width:220px; background:#fff; border-right:1px solid #e4e9f2; display:flex; flex-direction:column; flex-shrink:0; z-index:10; }
+.sidebar .logo { padding:8px 10px; border-bottom:1px solid #e4e9f2; background:linear-gradient(135deg,#e8f4fd,#fff); display:flex; align-items:center; justify-content:center; min-height:82px; }
+.sidebar .logo img { height:78px; width:auto; display:block; object-fit:contain; }
+.sidebar nav { flex:1; padding:6px 0; overflow-y:auto; }
+.sidebar nav::-webkit-scrollbar { width:4px; }
+.sidebar nav::-webkit-scrollbar-thumb { background:#cfd8dc; border-radius:2px; }
+.sidebar nav a { display:flex; align-items:center; gap:10px; padding:11px 18px; color:#607d8b; text-decoration:none; font-size:14px; cursor:pointer; transition:all .15s; border-left:3px solid transparent; }
+.sidebar nav a:hover { background:#f0f5fe; color:#0288d1; }
+.sidebar nav a.active { background:#e3f2fd; color:#0288d1; border-left-color:#29b6f6; font-weight:600; }
+.sidebar nav a .ico { width:18px; text-align:center; font-size:15px; flex-shrink:0; }
+.sidebar nav a .tag { margin-left:auto; font-size:10px; background:#e3f2fd; color:#0288d1; padding:1px 8px; border-radius:8px; }
+.sidebar nav a .tag.new { background:#ffebee; color:#f44336; }
+.sidebar .user-info { padding:12px 16px; border-top:1px solid #e4e9f2; display:flex; align-items:center; gap:10px; font-size:13px; color:#90a4ae; }
+.sidebar .user-info .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#29b6f6,#01579b); display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; flex-shrink:0; }
+
+/* Main */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.topbar { height:52px; background:#fff; border-bottom:1px solid #e4e9f2; display:flex; align-items:center; justify-content:space-between; padding:0 24px; flex-shrink:0; }
+.topbar .left { display:flex; align-items:center; gap:16px; }
+.topbar .project { font-size:15px; font-weight:600; color:#1a2a3a; display:flex; align-items:center; gap:12px; }
+.topbar .project .industry-switch { display:flex; gap:3px; background:#f5f7fa; padding:3px; border-radius:8px; }
+.topbar .project .industry-switch .ind-btn { padding:5px 14px; border-radius:6px; font-size:12px; color:#607d8b; cursor:pointer; border:none; background:none; font-family:inherit; transition:all .2s; }
+.topbar .project .industry-switch .ind-btn.active { background:#fff; color:#0288d1; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+.topbar .project .industry-switch .ind-btn:not(.active):hover { color:#37474f; }
+.topbar .right { display:flex; align-items:center; gap:16px; font-size:13px; color:#607d8b; }
+.topbar .right .time { color:#0288d1; font-family:monospace; font-size:15px; font-weight:600; }
+
+.wrapper { flex:1; position:relative; overflow:hidden; }
+.page { position:absolute; inset:0; overflow-y:auto; padding:16px 22px; opacity:0; visibility:hidden; transform:translateY(8px); transition:opacity .25s,transform .25s,visibility 0s .25s; pointer-events:none; background:#f0f5fe; }
+.page.active { opacity:1; visibility:visible; transform:translateY(0); transition:opacity .25s,transform .25s,visibility 0s 0s; pointer-events:auto; }
+.page::-webkit-scrollbar { width:5px; }
+.page::-webkit-scrollbar-thumb { background:#cfd8dc; border-radius:3px; }
+
+/* Industry Banner */
+.ind-banner { height:160px; border-radius:12px; margin:-16px -22px 14px -22px; background-size:cover; background-position:center; position:relative; overflow:hidden; display:flex; align-items:flex-end; background-color:#01579b; background-image:linear-gradient(135deg,#01579b,#0288d1,#4fc3f7); }
+.ind-banner .overlay { position:absolute; inset:0; background:linear-gradient(135deg,rgba(1,87,155,.6),rgba(2,136,209,.2),transparent 60%); }
+.ind-banner .banner-text { position:relative; z-index:1; padding:20px 24px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.3); }
+.ind-banner .banner-text h1 { font-size:26px; font-weight:700; letter-spacing:1px; }
+.ind-banner .banner-text p { font-size:13px; opacity:.9; margin-top:4px; }
+
+.curved-header { background:linear-gradient(135deg,#e3f2fd,#bbdefb); border-radius:0 0 18px 18px; padding:14px 20px; margin:-16px -22px 14px -22px; display:flex; align-items:center; justify-content:space-between; }
+.curved-header h2 { font-size:16px; color:#01579b; }
+.curved-header .sub { font-size:12px; color:#607d8b; }
+
+.section-title { font-size:14px; font-weight:600; color:#37474f; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.section-title .badge { font-size:11px; color:#90a4ae; font-weight:400; }
+
+.glass { background:rgba(255,255,255,.85); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.6); border-radius:12px; box-shadow:0 2px 12px rgba(2,136,209,.08),0 1px 3px rgba(0,0,0,.04); }
+.glass .ch-title { font-size:13px; color:#607d8b; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.glass .ch-title .chip { font-size:10px; background:#e3f2fd; color:#0288d1; padding:1px 6px; border-radius:3px; }
+
+/* Stats */
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+.stat-card { background:#fff; border:1px solid #e4e9f2; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:14px; transition:transform .2s; box-shadow:0 1px 4px rgba(0,0,0,.03); cursor:pointer; }
+.stat-card:active { transform:scale(.97); }
+.stat-card .sc-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.stat-card .sc-icon.blue { background:#e3f2fd; color:#0288d1; }
+.stat-card .sc-icon.green { background:#e8f5e9; color:#4caf50; }
+.stat-card .sc-icon.orange { background:#fff3e0; color:#ff9800; }
+.stat-card .sc-icon.purple { background:#f3e5f5; color:#7b1fa2; }
+.stat-card .sc-icon.red { background:#ffebee; color:#f44336; }
+.stat-card .sc-info .sc-label { font-size:12px; color:#90a4ae; }
+.stat-card .sc-info .sc-value { font-size:22px; font-weight:700; font-family:'Helvetica Neue','SF Pro Display',monospace; color:#1a2a3a; line-height:1.2; }
+.stat-card .sc-info .sc-sub { font-size:11px; color:#b0bec5; margin-top:2px; }
+
+/* Params */
+.params-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.param-card { background:#fff; border:1px solid #e4e9f2; border-radius:12px; padding:14px 8px 10px; text-align:center; cursor:pointer; transition:all .2s; box-shadow:0 1px 4px rgba(0,0,0,.03); position:relative; overflow:hidden; }
+.param-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.param-card:active { transform:scale(.96); }
+.param-card .p-label { font-size:12px; color:#90a4ae; }
+.param-card .p-value { font-size:26px; font-weight:700; font-family:'Helvetica Neue','SF Pro Display',monospace; margin:4px 0 2px; line-height:1; letter-spacing:-.5px; }
+.param-card .p-unit { font-size:12px; color:#90a4ae; }
+.param-card .p-status { font-size:11px; margin-top:4px; display:inline-flex; align-items:center; gap:4px; padding:2px 12px; border-radius:10px; }
+.param-card .p-status.ok { background:#e8f5e9; color:#4caf50; }
+.param-card .p-status.warn { background:#fff3e0; color:#ff9800; }
+.param-card .p-status.crit { background:#ffebee; color:#f44336; }
+.param-card.p-do .p-value { color:#0288d1; } .param-card.p-do::before { background:#0288d1; }
+.param-card.p-temp .p-value { color:#ff7043; } .param-card.p-temp::before { background:#ff7043; }
+.param-card.p-ph .p-value { color:#7b1fa2; } .param-card.p-ph::before { background:#7b1fa2; }
+.param-card.p-sal .p-value { color:#00897b; } .param-card.p-sal::before { background:#00897b; }
+.param-card.p-nh3 .p-value { color:#ef6c00; } .param-card.p-nh3::before { background:#ef6c00; }
+.param-card.p-nitrite .p-value { color:#d32f2f; } .param-card.p-nitrite::before { background:#d32f2f; }
+.param-card.p-green { color:#4caf50; } .param-card.p-green::before { background:#4caf50; }
+.param-card.p-amber .p-value { color:#ff8f00; } .param-card.p-amber::before { background:#ff8f00; }
+.param-card.p-brown .p-value { color:#6d4c41; } .param-card.p-brown::before { background:#6d4c41; }
+.param-card.p-grey .p-value { color:#546e7a; } .param-card.p-grey::before { background:#546e7a; }
+.param-card.p-lime .p-value { color:#689f38; } .param-card.p-lime::before { background:#689f38; }
+
+.loc-bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.loc-btn { display:flex; align-items:center; gap:6px; padding:6px 16px; background:#fff; border:1px solid #e4e9f2; border-radius:20px; cursor:pointer; transition:all .2s; font-size:13px; color:#607d8b; box-shadow:0 1px 3px rgba(0,0,0,.03); }
+.loc-btn:hover { border-color:#29b6f6; color:#0288d1; }
+.loc-btn.active { background:#e3f2fd; border-color:#29b6f6; color:#01579b; font-weight:600; }
+.loc-btn .loc-dot { width:6px; height:6px; border-radius:50%; background:#cfd8dc; flex-shrink:0; }
+.loc-btn.active .loc-dot { background:#29b6f6; box-shadow:0 0 6px rgba(41,182,246,.4); }
+
+.main-chart-grid { display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px; }
+.chart-box { background:#fff; border:1px solid #e4e9f2; border-radius:12px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,.03); }
+.chart-box .chart-container { position:relative; width:100%; height:160px; }
+
+.bottom-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+
+.device-list { display:flex; flex-direction:column; gap:6px; }
+.dev-item { background:#fff; border:1px solid #e4e9f2; border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:.15s; }
+.dev-item:active { background:#f5faff; }
+.dev-item .d-left { display:flex; align-items:center; gap:8px; }
+.dev-item .d-name { font-size:13px; color:#37474f; }
+.dev-item .d-desc { font-size:11px; color:#90a4ae; }
+.dev-item .d-status { font-size:11px; padding:2px 10px; border-radius:5px; }
+.dev-item .d-status.running { background:#e8f5e9; color:#4caf50; }
+.dev-item .d-status.standby { background:#fff3e0; color:#ff9800; }
+.dev-item .d-status.off { background:#f5f5f5; color:#9e9e9e; }
+.dev-item .d-status.fault { background:#ffebee; color:#f44336; }
+
+.alarm-list { display:flex; flex-direction:column; gap:6px; }
+.alarm-item { background:#fff; border:1px solid #e4e9f2; border-radius:8px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:.15s; }
+.alarm-item:active { background:#f5faff; }
+.alarm-item .a-left { display:flex; align-items:center; gap:10px; }
+.alarm-item .a-icon { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.alarm-item .a-icon.p0 { background:#f44336; box-shadow:0 0 6px rgba(244,67,54,.4); }
+.alarm-item .a-icon.p1 { background:#ff9800; }
+.alarm-item .a-icon.p2 { background:#90a4ae; }
+.alarm-item .a-info .a-name { font-size:13px; color:#37474f; }
+.alarm-item .a-info .a-desc { font-size:11px; color:#90a4ae; margin-top:2px; }
+.alarm-item .a-badge { font-size:11px; padding:2px 8px; border-radius:5px; }
+.alarm-item .a-badge.pending { background:#ffebee; color:#f44336; }
+.alarm-item .a-badge.resolved { background:#e8f5e9; color:#4caf50; }
+.alarm-item .a-badge.processing { background:#fff3e0; color:#ff9800; }
+
+.info-row { display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-bottom:1px solid #eceff1; }
+.info-row:last-child { border-bottom:none; }
+.info-row .label { color:#90a4ae; }
+.info-row .value { color:#37474f; font-weight:500; }
+
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+table th { background:#f5f7fa; color:#607d8b; padding:8px 10px; text-align:left; border-bottom:1px solid #eceff1; font-weight:500; font-size:12px; }
+table td { padding:7px 10px; border-bottom:1px solid #eceff1; color:#37474f; }
+table tr { transition:.1s; }
+table tr:hover td { background:#f5faff; }
+table .tag { font-size:11px; padding:2px 8px; border-radius:4px; }
+table .tag.ok { background:#e8f5e9; color:#4caf50; }
+table .tag.warn { background:#fff3e0; color:#ff9800; }
+table .tag.crit { background:#ffebee; color:#f44336; }
+
+.ctrl-panel { background:#fff; border:1px solid #e4e9f2; border-radius:10px; padding:14px; box-shadow:0 1px 3px rgba(0,0,0,.03); }
+.ctrl-row { display:flex; gap:8px; margin-bottom:6px; align-items:center; flex-wrap:wrap; font-size:13px; }
+.ctrl-row label { color:#90a4ae; min-width:44px; font-size:12px; }
+.ctrl-row select,.ctrl-row input { background:#f5f7fa; border:1px solid #e4e9f2; color:#37474f; padding:4px 8px; border-radius:5px; font-size:12px; outline:none; }
+.ctrl-row button { padding:5px 14px; font-size:12px; border:none; border-radius:6px; cursor:pointer; transition:.15s; font-family:inherit; }
+.ctrl-row button:active { transform:scale(.93); }
+.ctrl-row button.start { background:#4caf50; color:#fff; }
+.ctrl-row button.stop { background:#f44336; color:#fff; }
+.ctrl-row button.send { background:linear-gradient(135deg,#29b6f6,#0288d1); color:#fff; }
+
+.v-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.v-box { background:#fff; border:1px solid #e4e9f2; border-radius:10px; overflow:hidden; cursor:pointer; transition:.2s; box-shadow:0 1px 4px rgba(0,0,0,.03); }
+.v-box:active { transform:scale(.97); }
+.v-box .v-img { width:100%; height:170px; object-fit:cover; display:block; background:#e8eaf6; }
+.v-box .v-label { padding:8px 12px; font-size:12px; color:#607d8b; }
+
+.filter-bar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+.filter-bar select,.filter-bar input { background:#fff; border:1px solid #e4e9f2; color:#37474f; padding:6px 10px; border-radius:6px; font-size:12px; outline:none; }
+.filter-bar button { background:linear-gradient(135deg,#29b6f6,#0288d1); color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer; }
+.filter-bar .btn-outline { background:#fff; color:#607d8b; border:1px solid #e4e9f2; }
+
+.setting-card { background:#fff; border:1px solid #e4e9f2; border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 1px 4px rgba(0,0,0,.03); }
+.setting-row { display:flex; align-items:center; justify-content:space-between; padding:7px 0; border-bottom:1px solid #eceff1; font-size:13px; }
+.setting-row:last-child { border-bottom:none; }
+.setting-row .s-label { color:#37474f; }
+.setting-row .s-val { color:#90a4ae; font-size:12px; }
+.setting-row .s-input { background:#f5f7fa; border:1px solid #e4e9f2; color:#37474f; padding:3px 8px; border-radius:4px; font-size:12px; width:70px; text-align:center; outline:none; }
+
+.passport-card { background:linear-gradient(135deg,#e3f2fd,#f5faff); border:1px solid #bbdefb; border-radius:12px; padding:18px; }
+.passport-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.passport-header .pp-title { font-size:16px; font-weight:600; color:#01579b; }
+.passport-header .pp-qr { width:48px; height:48px; background:#fff; border-radius:6px; display:flex; align-items:center; justify-content:center; padding:4px; }
+.mock-qr { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; width:100%; height:100%; }
+.mock-qr div { background:#e4e9f2; border-radius:1px; }
+.mock-qr div:nth-child(odd) { background:#37474f; }
+.passport-meta { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+.passport-meta .pm-item .pm-label { font-size:11px; color:#90a4ae; }
+.passport-meta .pm-item .pm-value { font-size:14px; font-weight:500; color:#37474f; margin-top:2px; }
+
+.detail-overlay { position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%); width:100%; max-width:720px; background:#fff; border-top:1px solid #e4e9f2; border-radius:16px 16px 0 0; padding:14px 20px 24px; transition:transform .35s cubic-bezier(.4,0,.2,1); z-index:50; max-height:75vh; overflow-y:auto; box-shadow:0 -6px 40px rgba(0,0,0,.1); }
+.detail-overlay.open { transform:translateX(-50%) translateY(0); }
+.detail-overlay .handle { width:36px; height:4px; background:#e4e9f2; border-radius:2px; margin:0 auto 10px; }
+.detail-overlay .d-close { position:absolute; top:12px; right:14px; color:#90a4ae; font-size:16px; cursor:pointer; padding:4px; }
+.detail-overlay .d-title { font-size:15px; color:#37474f; margin-bottom:8px; }
+
+.toast { position:fixed; top:66px; right:24px; background:#fff; border:1px solid #e4e9f2; border-radius:10px; padding:10px 18px; font-size:13px; color:#37474f; box-shadow:0 6px 24px rgba(0,0,0,.12); z-index:100; opacity:0; transform:translateX(30px); transition:all .35s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateX(0); pointer-events:auto; }
+.toast .toast-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; background:#4caf50; }
+
+.toggle { position:relative; width:36px; height:20px; display:inline-block; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; }
+.toggle .slider { position:absolute; inset:0; background:#cfd8dc; border-radius:10px; cursor:pointer; transition:.3s; }
+.toggle .slider::before { content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:.3s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.toggle input:checked+.slider { background:linear-gradient(135deg,#29b6f6,#0288d1); }
+.toggle input:checked+.slider::before { transform:translateX(16px); }
+
+.tag-group { display:flex; gap:4px; flex-wrap:wrap; }
+.tag-pill { background:#e3f2fd; color:#0288d1; padding:2px 10px; border-radius:4px; font-size:11px; }
+
+.map-wrap { border-radius:10px; overflow:hidden; border:1px solid #e4e9f2; }
+#miniMap { height:170px; background:#e8eaf6; }
+.leaflet-container { background:#e8eaf6; }
+
+@media (max-width:1100px) {
+  .params-grid { grid-template-columns:repeat(2,1fr); }
+  .main-chart-grid,.bottom-grid { grid-template-columns:1fr; }
+  .stats-grid { grid-template-columns:repeat(2,1fr); }
+  .passport-meta { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="ConfigSense灵配智控_APP产品Logo.png" alt="ConfigSense 灵配智控">
+    </div>
+    <nav id="sidebarNav">
+      <a class="active" data-page="0"><span class="ico"> </span>总览仪表盘</a>
+      <a data-page="1"><span class="ico"> </span>水质监测</a>
+      <a data-page="2"><span class="ico"> </span>指标数据池 <span class="tag">28</span></a>
+      <a data-page="3"><span class="ico"> </span>设备管理</a>
+      <a data-page="4"><span class="ico"> </span>设备控制</a>
+      <a data-page="5"><span class="ico"> </span>视频监控</a>
+      <a data-page="6"><span class="ico"> </span>历史数据</a>
+      <a data-page="7"><span class="ico"> </span>报警中心 <span class="tag">3</span></a>
+      <a data-page="8"><span class="ico"> </span>设备绑定</a>
+      <a data-page="9"><span class="ico"> </span>数字护照 <span class="tag new">NEW</span></a>
+      <a data-page="10"><span class="ico"> </span>账号管理</a>
+    </nav>
+    <div class="user-info">
+      <div class="avatar">D</div>
+      <div><span style="color:#37474f;font-weight:500;">David Liu</span><br><span style="font-size:11px;">WEST 外贸部 · 管理员</span></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="left">
+        <span class="project">
+          <span id="pageTitle">总览仪表盘</span>
+          <span style="color:#cfd8dc;">|</span>
+          <div class="industry-switch">
+            <button class="ind-btn active" data-ind="0"> 水产养殖</button>
+            <button class="ind-btn" data-ind="1"> 智慧种植</button>
+            <button class="ind-btn" data-ind="2"> 智慧牧业</button>
+          </div>
+        </span>
+      </div>
+      <div class="right">
+        <span> 晴 28°C</span>
+        <span class="time" id="clock">--:--:--</span>
+        <span onclick="showToast('语言切换功能开发中')" style="font-size:12px;padding:3px 10px;border-radius:12px;background:#e3f2fd;color:#0288d1;cursor:pointer;font-weight:600;user-select:none;">EN</span>
+      </div>
+    </header>
+
+    <div class="wrapper">
+      <!-- ===== PAGE 0: 总览仪表盘 ===== -->
+      <div class="page active" data-page="0">
+        <!-- Industry Banner -->
+        <div class="ind-banner" id="indBanner">
+          <div class="overlay"></div>
+          <div class="banner-text">
+            <h1 id="bannerTitle">智慧水产养殖 · 实时总览</h1>
+            <p id="bannerSub">ConfigSense 灵配智控 · 数据驱动精准养殖 · 传感器在线率 98.6%</p>
+          </div>
+        </div>
+
+        <div class="loc-bar" id="dashLocBar"></div>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="section-title"> 实时监测参数 <span class="badge">（点击卡片查看历史记录）</span></div>
+        <div class="params-grid" id="paramsGrid"></div>
+        <div class="main-chart-grid">
+          <div class="chart-box">
+            <div class="ch-title" id="trendTitle">水质参数变化趋势 <span class="chip">近24h</span></div>
+            <div class="chart-container"><canvas id="trendChart"></canvas></div>
+          </div>
+          <div class="glass" style="padding:14px;">
+            <div class="ch-title">设备运行状态</div>
+            <div id="dashDevices"></div>
+          </div>
+        </div>
+        <div class="bottom-grid">
+          <div class="glass" style="padding:14px;">
+            <div class="ch-title"> 基地概况</div>
+            <div id="farmInfo"></div>
+          </div>
+          <div class="glass" style="padding:12px;">
+            <div class="ch-title">分布地图 <span class="chip">点击定位</span></div>
+            <div class="map-wrap"><div id="miniMap"></div></div>
+          </div>
+          <div class="glass" style="padding:14px;">
+            <div class="ch-title"> 最近报警</div>
+            <div class="alarm-list" id="dashAlarms"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE 1: 水质监测 ===== -->
+      <div class="page" data-page="1">
+        <div class="curved-header"><h2> 水质监测 · 实时数据</h2><span class="sub">传感器每30秒自动上报 · 点击参数查看记录</span></div>
+        <div class="loc-bar" id="waterLocBar"></div>
+        <div class="section-title"> 监测参数详情</div>
+        <div id="waterParamList" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <!-- ===== PAGE 2: 指标数据池 ===== -->
+      <div class="page" data-page="2">
+        <div class="curved-header"><h2> 指标数据池</h2><span class="sub">ConfigSense 核心 · 指标定义 · 行业映射 · 数据归类</span></div>
+        <div class="filter-bar">
+          <span class="loc-btn active" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('已筛选: 全部指标')">全部 (28)</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('已筛选: 水质类')">水质类 (10)</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('已筛选: 土壤类')">土壤类 (5)</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('已筛选: 气象类')">气象类 (6)</span>
+        </div>
+        <div class="glass" style="padding:0;overflow:hidden;">
+          <div class="table-wrap">
+            <table><thead><tr><th>指标名称</th><th>编码</th><th>类别</th><th>单位</th><th>采集方式</th><th>当前值</th><th>状态</th><th>行业</th></tr></thead>
+            <tbody><tr><td>溶解氧 DO</td><td style="font-family:monospace;">WQ-001</td><td>水质核心</td><td>mg/L</td><td>传感器自动</td><td>6.82</td><td><span class="tag ok">正常</span></td><td>水产</td></tr><tr><td>水温</td><td style="font-family:monospace;">WQ-002</td><td>水质核心</td><td>°C</td><td>传感器自动</td><td>26.3</td><td><span class="tag ok">正常</span></td><td>水产/种植</td></tr><tr><td>pH 值</td><td style="font-family:monospace;">WQ-003</td><td>水质核心</td><td>pH</td><td>传感器自动</td><td>7.82</td><td><span class="tag ok">正常</span></td><td>水产/种植</td></tr><tr><td>氨氮 NH₃-N</td><td style="font-family:monospace;">WQ-004</td><td>水质扩展</td><td>mg/L</td><td>传感器/手动</td><td>0.05</td><td><span class="tag ok">正常</span></td><td>水产</td></tr><tr><td>土壤湿度</td><td style="font-family:monospace;">SL-001</td><td>土壤</td><td>%</td><td>传感器自动</td><td>52.4</td><td><span class="tag ok">正常</span></td><td>种植</td></tr><tr><td>EC 电导率</td><td style="font-family:monospace;">SL-002</td><td>土壤</td><td>mS/cm</td><td>传感器自动</td><td>1.28</td><td><span class="tag warn">偏高</span></td><td>种植</td></tr><tr><td>空气温度</td><td style="font-family:monospace;">WE-001</td><td>气象</td><td>°C</td><td>传感器自动</td><td>28.5</td><td><span class="tag ok">正常</span></td><td>全行业</td></tr><tr><td>光照辐射</td><td style="font-family:monospace;">WE-004</td><td>气象</td><td>W/m²</td><td>传感器自动</td><td>486</td><td><span class="tag ok">正常</span></td><td>种植</td></tr><tr><td>GPS 位置</td><td style="font-family:monospace;">LV-001</td><td>定位</td><td>坐标</td><td>GPS</td><td>110.35°E</td><td><span class="tag ok">正常</span></td><td>牧业</td></tr><tr><td>液位</td><td style="font-family:monospace;">WQ-010</td><td>水位</td><td>cm</td><td>传感器自动</td><td>185</td><td><span class="tag ok">正常</span></td><td>水产</td></tr></tbody></table>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+          <button class="btn-outline" onclick="showToast('正在导出 CSV...')" style="background:#fff;border:1px solid #e4e9f2;padding:6px 16px;border-radius:6px;font-size:12px;color:#607d8b;cursor:pointer;"> 导出 CSV</button>
+          <button onclick="showToast('新增指标表单已打开')" style="background:linear-gradient(135deg,#29b6f6,#0288d1);color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;">+ 新增指标</button>
+        </div>
+      </div>
+
+      <!-- ===== PAGE 3: 设备管理 ===== -->
+      <div class="page" data-page="3">
+        <div class="curved-header"><h2> 设备管理</h2><span class="sub">传感器 · 网关 · 控制箱 · 状态监控</span></div>
+        <div class="filter-bar">
+          <span class="loc-btn active" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示全部设备')">全部 (26)</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示传感器')">传感器 (14)</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示网关')">网关 (3)</span>
+          <button onclick="showToast('同步设备数据中...')" style="background:#fff;border:1px solid #e4e9f2;padding:5px 12px;border-radius:6px;font-size:12px;color:#607d8b;cursor:pointer;"> 刷新</button>
+        </div>
+        <div class="stats-grid" style="margin-bottom:12px;"><div class="stat-card" onclick="showToast('在线设备: 24台')"><div class="sc-icon green"> </div><div class="sc-info"><div class="sc-label">在线</div><div class="sc-value">24</div></div></div><div class="stat-card" onclick="showToast('待机设备: 1台')"><div class="sc-icon orange"> </div><div class="sc-info"><div class="sc-label">待机</div><div class="sc-value">1</div></div></div><div class="stat-card" onclick="showToast('故障设备: 1台')"><div class="sc-icon red"> </div><div class="sc-info"><div class="sc-label">故障</div><div class="sc-value">1</div></div></div><div class="stat-card" onclick="showToast('离线设备: 1台')"><div class="sc-icon" style="background:#f5f5f5;color:#90a4ae;"> </div><div class="sc-info"><div class="sc-label">离线</div><div class="sc-value">1</div></div></div></div>
+        <div class="glass" style="padding:0;overflow:hidden;">
+          <div class="table-wrap">
+            <table><thead><tr><th>设备名称</th><th>类型</th><th>编号</th><th>区域</th><th>信号</th><th>最后上报</th><th>状态</th></tr></thead>
+            <tbody id="deviceTableBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE 4: 设备控制 ===== -->
+      <div class="page" data-page="4">
+        <div class="curved-header"><h2> 设备远程控制</h2><span class="sub">远程启停 · 参数设置 · 控制日志</span></div>
+        <div class="loc-bar" id="ctrlLocBar"></div>
+        <div id="controlPanels" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+        <div class="glass" style="padding:12px;margin-top:12px;">
+          <div class="ch-title">控制日志 <span class="chip">近24h</span></div>
+          <div id="ctrlLog" style="font-size:12px;color:#607d8b;line-height:2;"></div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE 5: 视频监控 ===== -->
+      <div class="page" data-page="5">
+        <div class="curved-header"><h2> 视频监控 · 实时画面</h2><span class="sub">点击画面放大查看 · 高清摄像头实时传输</span></div>
+        <div class="v-grid" id="videoGrid"></div>
+        <div class="glass" style="padding:12px;">
+          <div class="ch-title">摄像头设备列表</div>
+          <div id="camList" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE 6: 历史数据 ===== -->
+      <div class="page" data-page="6">
+        <div class="curved-header"><h2> 历史数据查询</h2><span class="sub">数据保存2个月 · 趋势分析 · 导出</span></div>
+        <div class="filter-bar">
+          <select id="histPond"></select>
+          <select id="histParam"></select>
+          <input type="text" id="histDateFrom" value="2026-05-01" style="width:100px;">
+          <span style="color:#90a4ae;font-size:12px;">至</span>
+          <input type="text" id="histDateTo" value="2026-05-26" style="width:100px;">
+          <button onclick="refreshHistChart();showToast('历史数据已更新')">查询</button>
+          <button onclick="showToast('正在导出表格...')" style="background:#fff;border:1px solid #e4e9f2;color:#607d8b;">导出</button>
+        </div>
+        <div class="chart-box" style="margin-bottom:12px;"><div class="ch-title" id="histChartTitle">数据趋势</div><div class="chart-container" style="height:150px;"><canvas id="histChart"></canvas></div></div>
+        <div class="glass" style="padding:0;overflow:hidden;">
+          <div class="table-wrap">
+            <table><thead><tr><th>时间</th><th>参数</th><th>数值</th><th>位置</th><th>状态</th></tr></thead><tbody id="histTableBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE 7: 报警中心 ===== -->
+      <div class="page" data-page="7">
+        <div class="curved-header"><h2> 报警中心</h2><span class="sub">P0 紧急 · P1 重要 · P2 提示 · 闭环管理</span></div>
+        <div class="stats-grid" style="margin-bottom:12px;"><div class="stat-card" onclick="showToast('P0紧急报警: 1条')"><div class="sc-icon red"> </div><div class="sc-info"><div class="sc-label">紧急 P0</div><div class="sc-value" style="color:#f44336;">1</div></div></div><div class="stat-card" onclick="showToast('P1重要报警: 3条')"><div class="sc-icon orange"> </div><div class="sc-info"><div class="sc-label">重要 P1</div><div class="sc-value" style="color:#ff9800;">3</div></div></div><div class="stat-card" onclick="showToast('P2提示: 5条')"><div class="sc-icon" style="background:#f5f5f5;color:#90a4ae;"> </div><div class="sc-info"><div class="sc-label">提示 P2</div><div class="sc-value" style="color:#90a4ae;">5</div></div></div><div class="stat-card" onclick="showToast('今日闭环率: 87.5%')"><div class="sc-icon green"> </div><div class="sc-info"><div class="sc-label">今日处理</div><div class="sc-value" style="color:#4caf50;">7</div></div></div></div>
+        <div class="filter-bar">
+          <span class="loc-btn active" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示全部报警')">全部</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示未处理')">未处理</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示已处理')">已处理</span>
+        </div>
+        <div id="alarmFullList" class="alarm-list"></div>
+        <div class="glass" style="padding:14px;margin-top:12px;">
+          <div class="ch-title">报警阈值配置</div>
+          <div class="setting-row"><span class="s-label">溶解氧下限</span><input class="s-input" value="4.0"><span style="color:#90a4ae;font-size:11px;">mg/L</span><span class="tag-pill">P0</span></div>
+          <div class="setting-row"><span class="s-label">温度上限</span><input class="s-input" value="32"><span style="color:#90a4ae;font-size:11px;">°C</span><span class="tag-pill">P1</span></div>
+          <div class="setting-row"><span class="s-label">pH 范围</span><input class="s-input" value="6.0" style="width:55px;"> – <input class="s-input" value="9.0" style="width:55px;"></div>
+          <div class="setting-row" style="border:none;justify-content:flex-end;"><button onclick="showToast('报警阈值已保存')" style="background:linear-gradient(135deg,#29b6f6,#0288d1);color:#fff;border:none;padding:6px 20px;border-radius:6px;font-size:13px;cursor:pointer;">保存设置</button></div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE 8: 设备绑定 ===== -->
+      <div class="page" data-page="8">
+        <div class="curved-header"><h2> 设备绑定设置</h2><span class="sub">网关绑定 · 监测箱绑定 · 报警阈值</span></div>
+        <div class="setting-card"><div class="ch-title" style="margin-bottom:8px;"> 网关绑定</div><div class="setting-row"><span class="s-label">网关编号</span><span class="s-val">GW-20260501-001</span><span style="color:#4caf50;font-size:11px;">已绑定</span></div><div class="setting-row"><span class="s-label">传感器点位</span><span class="s-val">1号塘 · 2号塘 · 3号塘</span><span style="color:#0288d1;font-size:11px;cursor:pointer;" onclick="showToast('编辑传感器点位')">编辑</span></div></div>
+        <div class="setting-card"><div class="ch-title" style="margin-bottom:8px;"> 监测箱绑定</div><div class="setting-row"><span class="s-label">监测箱编号</span><span class="s-val">BOX-A01</span><span style="color:#4caf50;font-size:11px;">已绑定</span></div><div class="setting-row"><span class="s-label">采集顺序</span><span class="s-val">1号塘 → 2号塘 → 3号塘（轮巡）</span></div></div>
+        <div class="setting-card"><div class="ch-title" style="margin-bottom:8px;"> 报警阈值</div><div class="setting-row"><span class="s-label">溶解氧下限</span><input class="s-input" value="4.0"><span style="color:#90a4ae;font-size:11px;">mg/L</span></div><div class="setting-row"><span class="s-label">温度上限</span><input class="s-input" value="32"><span style="color:#90a4ae;font-size:11px;">°C</span></div><div class="setting-row" style="border:none;justify-content:flex-end;"><button onclick="showToast('绑定设置已保存')" style="background:linear-gradient(135deg,#29b6f6,#0288d1);color:#fff;border:none;padding:6px 20px;border-radius:6px;font-size:13px;cursor:pointer;">保存</button></div></div>
+        <div class="setting-card" style="text-align:center;padding:20px;cursor:pointer;" onclick="showToast('请打开摄像头扫描设备二维码')"><div style="font-size:30px;margin-bottom:6px;"> </div><div style="font-size:15px;color:#0288d1;font-weight:600;">扫码绑定新设备</div><div style="font-size:12px;color:#90a4ae;margin-top:4px;">打开摄像头扫描设备二维码</div></div>
+      </div>
+
+      <!-- ===== PAGE 9: 数字护照 ===== -->
+      <div class="page" data-page="9">
+        <div class="curved-header"><h2> 数字护照</h2><span class="sub">Digital Passport · 农产品全链路溯源</span></div>
+        <div class="filter-bar">
+          <span class="loc-btn active" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示全部批次')">全部批次</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示水产护照')">水产护照</span>
+          <span class="loc-btn" onclick="this.classList.add('active');document.querySelectorAll('.filter-bar>.loc-btn').forEach(e=>e!=this&&e.classList.remove('active'));showToast('显示种植护照')">种植护照</span>
+          <button onclick="showToast('新建护照表单已打开')" style="background:linear-gradient(135deg,#29b6f6,#0288d1);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;">+ 新建护照</button>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;">
+          <div class="passport-card">
+            <div class="passport-header"><div class="pp-title">  水产护照 · 南美白对虾</div><div class="pp-qr"><div class="mock-qr"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div></div>
+            <div class="passport-meta"><div class="pm-item"><div class="pm-label">批次号</div><div class="pm-value">BATCH-20260526</div></div><div class="pm-item"><div class="pm-label">品种</div><div class="pm-value">南美白对虾</div></div><div class="pm-item"><div class="pm-label">塘口</div><div class="pm-value">1号塘口</div></div><div class="pm-item"><div class="pm-label">投苗日期</div><div class="pm-value">2026-03-15</div></div><div class="pm-item"><div class="pm-label">预计采收</div><div class="pm-value">2026-06-20</div></div><div class="pm-item"><div class="pm-label">周期</div><div class="pm-value">72 天</div></div><div class="pm-item"><div class="pm-label">产量</div><div class="pm-value">1,200 kg</div></div><div class="pm-item"><div class="pm-label">状态</div><div class="pm-value" style="color:#4caf50;"> 进行中</div></div></div>
+            <div class="ch-title">环境监测数据（自动归集）</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;"><div style="background:#fff;border:1px solid #e4e9f2;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:#90a4ae;">平均 DO</div><div style="font-size:16px;font-weight:700;color:#0288d1;">6.82</div><div style="font-size:10px;color:#90a4ae;">mg/L</div></div><div style="background:#fff;border:1px solid #e4e9f2;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:#90a4ae;">平均水温</div><div style="font-size:16px;font-weight:700;color:#ff7043;">26.3</div><div style="font-size:10px;color:#90a4ae;">°C</div></div><div style="background:#fff;border:1px solid #e4e9f2;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:#90a4ae;">平均 pH</div><div style="font-size:16px;font-weight:700;color:#7b1fa2;">7.82</div><div style="font-size:10px;color:#90a4ae;">pH</div></div><div style="background:#fff;border:1px solid #e4e9f2;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:#90a4ae;">最高氨氮</div><div style="font-size:16px;font-weight:700;color:#ef6c00;">0.12</div><div style="font-size:10px;color:#90a4ae;">mg/L</div></div></div>
+            <div class="ch-title">用药记录</div><div style="font-size:12px;color:#90a4ae;margin-bottom:10px;">暂无用药记录 · 全程绿色养殖</div>
+            <div style="display:flex;gap:8px;"><button onclick="showToast('溯源码已生成: https://trace.configsense.com/BATCH-20260526')" style="background:linear-gradient(135deg,#29b6f6,#0288d1);color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;"> 生成溯源码</button><button onclick="showToast('正在导出 PDF 溯源报告...')" style="background:#fff;border:1px solid #e4e9f2;padding:6px 14px;border-radius:6px;font-size:12px;color:#607d8b;cursor:pointer;"> 导出报告</button></div>
+          </div>
+          <div class="glass" style="padding:14px;">
+            <div class="ch-title">其他批次</div>
+            <div style="display:flex;flex-direction:column;gap:8px;"><div style="background:#fff;border:1px solid #e4e9f2;border-radius:8px;padding:10px;cursor:pointer;" onclick="showToast('查看木薯种植护照')"><div style="display:flex;justify-content:space-between;"><span style="font-size:13px;color:#37474f;">木薯 · 种植护照</span><span style="font-size:10px;color:#4caf50;">已签发</span></div><div style="font-size:11px;color:#90a4ae;margin-top:2px;">CS-PL-20260501</div></div><div style="background:#fff;border:1px solid #e4e9f2;border-radius:8px;padding:10px;cursor:pointer;" onclick="showToast('查看罗非鱼水产护照')"><div style="display:flex;justify-content:space-between;"><span style="font-size:13px;color:#37474f;">罗非鱼 · 水产护照</span><span style="font-size:10px;color:#4caf50;">已签发</span></div><div style="font-size:11px;color:#90a4ae;margin-top:2px;">CS-AQ-20260415</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAGE 10: 账号管理 ===== -->
+      <div class="page" data-page="10">
+        <div class="curved-header"><h2> 账号管理</h2><span class="sub">用户管理 · 权限分级 · 操作记录 · 多语言</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="setting-card"><div class="ch-title" style="margin-bottom:8px;"> 当前账号</div><div class="setting-row"><span class="s-label">用户名</span><span class="s-val">david.liu</span></div><div class="setting-row"><span class="s-label">角色</span><span class="s-val" style="color:#0288d1;font-weight:600;">系统管理员</span></div><div class="setting-row"><span class="s-label">订阅</span><span class="s-val" style="color:#0288d1;font-weight:600;">企业版 · 剩余 126 天</span></div><div class="setting-row"><span class="s-label">授权</span><div class="tag-group"><span class="tag-pill">全功能</span><span class="tag-pill">多语言</span><span class="tag-pill">数字护照</span><span class="tag-pill">API</span></div></div><div class="setting-row" style="border:none;"><span style="color:#0288d1;font-size:12px;cursor:pointer;" onclick="showToast('修改密码表单已打开')">修改密码</span></div></div>
+          <div class="setting-card"><div class="ch-title" style="margin-bottom:8px;"> 多语言</div><div class="setting-row"><span class="s-label">当前语言</span><span class="s-val">中文 (简体)</span></div><div class="setting-row"><span class="s-label">已激活</span><span class="s-val">中文 · English · Français · Español</span></div><div class="setting-row"><span class="s-label">语言包</span><span class="s-val">v2.1.0 · 远程更新无需发版</span></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px;">
+          <div class="setting-card"><div class="ch-title" style="margin-bottom:8px;"> 子账号 <span class="chip">3个</span></div><div class="table-wrap"><table style="font-size:12px;"><thead><tr><th>账号</th><th>姓名</th><th>角色</th><th>操作</th></tr></thead><tbody><tr><td>lisi</td><td>李四</td><td>操作员</td><td><span style="color:#0288d1;cursor:pointer;" onclick="showToast('编辑李四权限')">编辑</span> <span style="color:#f44336;cursor:pointer;" onclick="showToast('确认禁用李四？')">禁用</span></td></tr><tr><td>wangwu</td><td>王五</td><td>操作员</td><td><span style="color:#0288d1;cursor:pointer;" onclick="showToast('编辑王五权限')">编辑</span> <span style="color:#f44336;cursor:pointer;" onclick="showToast('确认禁用王五？')">禁用</span></td></tr></tbody></table></div><div style="margin-top:8px;"><button onclick="showToast('添加子账号表单已打开')" style="background:linear-gradient(135deg,#29b6f6,#0288d1);color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;">+ 添加子账号</button></div></div>
+          <div class="setting-card"><div class="ch-title" style="margin-bottom:8px;"> 操作记录</div><div style="font-size:12px;color:#607d8b;line-height:2.2;"><div>2026-05-26 14:15 David 查看 1号塘 水质数据</div><div>2026-05-26 08:15 David 启动 1号塘 增氧机</div><div>2026-05-25 22:00 李四 修改 2号塘 报警阈值</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL OVERLAY -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="handle"></div>
+  <span class="d-close" onclick="closeOverlay()">✕</span>
+  <div class="d-title" id="overlayTitle"> 采集数据详情</div>
+  <div style="font-size:12px;color:#90a4ae;margin-bottom:8px;" id="overlaySub"></div>
+  <div class="chart-box" style="margin-bottom:8px;padding:8px;"><div class="chart-container" style="height:120px;"><canvas id="overlayChart"></canvas></div></div>
+  <div style="overflow-x:auto;"><table id="overlayTable"><thead><tr><th>时间</th><th>数值</th><th>单位</th><th>位置</th><th>状态</th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span class="toast-dot"></span><span id="toastMsg"></span></div>
+
+<script>
+const IND_DATA = {
+  0: {
+    name:'水产', prefix:'养殖', base:'海南世东水产养殖基地',
+    bannerImg:'https://picsum.photos/seed/aquaculture/1400/400',
+    bannerTitle:'智慧水产养殖 · 实时总览',
+    bannerSub:'ConfigSense 灵配智控 · 数据驱动精准养殖 · 传感器在线率 98.6%',
+    params:[
+      {key:'do',label:'溶解氧 DO',unit:'mg/L',color:'#0288d1',cls:'p-do',ok:v=>v>=4},
+      {key:'temp',label:'水温',unit:'°C',color:'#ff7043',cls:'p-temp',ok:v=>v>=15&&v<=30},
+      {key:'ph',label:'pH 值',unit:'pH',color:'#7b1fa2',cls:'p-ph',ok:v=>v>=6.5&&v<=9},
+      {key:'sal',label:'盐度',unit:'‰',color:'#00897b',cls:'p-sal',ok:v=>v>=25&&v<=32},
+      {key:'nh3',label:'氨氮',unit:'mg/L',color:'#ef6c00',cls:'p-nh3',ok:v=>v<0.1},
+      {key:'nitrite',label:'亚硝酸盐',unit:'mg/L',color:'#d32f2f',cls:'p-nitrite',ok:v=>v<0.03},
+      {key:'turb',label:'浊度',unit:'NTU',color:'#6d4c41',cls:'p-brown',ok:v=>v<5},
+      {key:'orp',label:'ORP 氧化还原',unit:'mV',color:'#546e7a',cls:'p-grey',ok:()=>true}
+    ],
+    locPrefix:'塘口',
+    locs:['1号塘口','2号塘口','3号塘口','4号塘口','5号塘口'],
+    data:[{do:6.82,temp:26.3,ph:7.82,sal:28.5,nh3:0.05,nitrite:0.02,turb:3.2,orp:185},{do:6.51,temp:26.8,ph:7.90,sal:29.1,nh3:0.08,nitrite:0.03,turb:4.1,orp:192},{do:7.10,temp:25.9,ph:7.65,sal:27.8,nh3:0.12,nitrite:0.04,turb:2.8,orp:178},{do:6.93,temp:26.5,ph:7.88,sal:28.9,nh3:0.06,nitrite:0.02,turb:3.6,orp:188},{do:6.70,temp:27.1,ph:7.75,sal:28.2,nh3:0.07,nitrite:0.03,turb:3.0,orp:190}],
+    devices:[{name:'溶氧传感器 WE-T123',status:'running'},{name:'6合1水质监测仪',status:'running'},{name:'增氧机 #1',status:'running'},{name:'增氧机 #2',status:'off'},{name:'水泵',status:'running'},{name:'投料机',status:'standby'},{name:'液位传感器',status:'running'},{name:'网关 WE-C300',status:'running'}],
+    trendTitle:'水质参数变化趋势',farm:{name:'海南世东水产',area:'120 亩',stock:'38.5 吨',feed:'860 kg',sensors:'24/26'},
+    alarms:[{level:'p0',name:'1号塘 · 溶解氧偏低',desc:'03:15 · 值:3.85 mg/L',badge:'pending',badgeText:'未处理'},{level:'p1',name:'2号塘 · 温度偏高',desc:'14:30 · 值:33.2 °C',badge:'resolved',badgeText:'已恢复'},{level:'p1',name:'3号塘 · 氨氮超标',desc:'22:00 · 值:0.35 mg/L',badge:'resolved',badgeText:'已恢复'}],
+    ctrls:[{name:'增氧机',status:'运行中 1200rpm',statusCls:'running'},{name:'水泵',status:'进水模式',statusCls:'running'},{name:'投料机',status:'已停机',statusCls:'off'},{name:'照明',status:'已关闭',statusCls:'off'},{name:'温度调节',status:'恒温 26°C',statusCls:'running'},{name:'灯控',status:'已关闭',statusCls:'off'}]
+  },
+  1: {
+    name:'种植', prefix:'种植', base:'海南世东种植基地',
+    bannerImg:'https://picsum.photos/seed/planting/1400/400',
+    bannerTitle:'智慧种植 · 实时总览',
+    bannerSub:'ConfigSense 灵配智控 · 精准农业 · 土壤与环境智能监测',
+    params:[
+      {key:'moist',label:'土壤湿度',unit:'%',color:'#0288d1',cls:'p-do',ok:v=>v>=30&&v<=70},
+      {key:'stemp',label:'土壤温度',unit:'°C',color:'#ff7043',cls:'p-temp',ok:v=>v>=15&&v<=28},
+      {key:'sph',label:'土壤 pH',unit:'pH',color:'#7b1fa2',cls:'p-ph',ok:v=>v>=5.5&&v<=7.5},
+      {key:'ec',label:'EC 电导率',unit:'mS/cm',color:'#ff8f00',cls:'p-amber',ok:v=>v<1.5},
+      {key:'npk',label:'氮含量',unit:'ppm',color:'#689f38',cls:'p-lime',ok:v=>v>=30&&v<=80},
+      {key:'light',label:'光照辐射',unit:'W/m²',color:'#ef6c00',cls:'p-nh3',ok:v=>v<800},
+      {key:'co2',label:'CO₂ 浓度',unit:'ppm',color:'#546e7a',cls:'p-grey',ok:v=>v>=300&&v<=800},
+      {key:'press',label:'大气压力',unit:'hPa',color:'#6d4c41',cls:'p-brown',ok:()=>true}
+    ],
+    locPrefix:'地块',
+    locs:['1号地块','2号地块','3号地块','4号地块','5号地块'],
+    data:[{moist:52.4,stemp:22.8,sph:6.8,ec:1.28,npk:45,light:486,co2:412,press:1013},{moist:48.2,stemp:23.5,sph:6.5,ec:1.42,npk:52,light:523,co2:398,press:1011},{moist:55.8,stemp:21.9,sph:7.0,ec:1.15,npk:38,light:445,co2:425,press:1014},{moist:60.1,stemp:22.1,sph:6.7,ec:1.35,npk:48,light:468,co2:408,press:1012},{moist:44.5,stemp:24.2,sph:6.9,ec:1.52,npk:55,light:510,co2:390,press:1010}],
+    devices:[{name:'7合1土壤传感器',status:'running'},{name:'气象站',status:'running'},{name:'灌溉阀 #1',status:'running'},{name:'灌溉阀 #2',status:'off'},{name:'温室风机',status:'running'},{name:'卷帘机',status:'standby'},{name:'补光灯',status:'off'},{name:'网关 WE-C300',status:'running'}],
+    trendTitle:'土壤与环境参数趋势',farm:{name:'海南世东种植园',area:'80 亩',stock:'—',feed:'水肥 120L',sensors:'18/20'},
+    alarms:[{level:'p1',name:'1号地块 · 土壤湿度过低',desc:'06:00 · 值:28.5%',badge:'resolved',badgeText:'已灌溉'},{level:'p2',name:'2号地块 · 光照偏高',desc:'12:30 · 值:823 W/m²',badge:'pending',badgeText:'未处理'},{level:'p1',name:'3号地块 · EC偏高',desc:'昨日 · 值:1.65',badge:'resolved',badgeText:'已处理'}],
+    ctrls:[{name:'灌溉阀',status:'运行中',statusCls:'running'},{name:'施肥泵',status:'运行中',statusCls:'running'},{name:'温室风机',status:'运行中',statusCls:'running'},{name:'卷帘机',status:'已关闭',statusCls:'off'},{name:'补光灯',status:'已关闭',statusCls:'off'},{name:'喷滴灌',status:'待机',statusCls:'standby'}]
+  },
+  2: {
+    name:'牧业', prefix:'牧业', base:'海南世东牧场',
+    bannerImg:'https://picsum.photos/seed/livestock/1400/400',
+    bannerTitle:'智慧牧业 · 实时总览',
+    bannerSub:'ConfigSense 灵配智控 · GPS定位 · 电子围栏 · 牲畜健康监测',
+    params:[
+      {key:'gps',label:'GPS 在线率',unit:'%',color:'#4caf50',cls:'p-green',ok:v=>v>95},
+      {key:'btemp',label:'平均体温',unit:'°C',color:'#ff7043',cls:'p-temp',ok:v=>v>=37.5&&v<=39.5},
+      {key:'step',label:'活动量',unit:'步/日',color:'#ff8f00',cls:'p-amber',ok:()=>true},
+      {key:'fence',label:'围栏状态',unit:'',color:'#4caf50',cls:'p-green',ok:()=>true},
+      {key:'batt',label:'耳标电量',unit:'%',color:'#ef6c00',cls:'p-nh3',ok:v=>v>30},
+      {key:'sig',label:'信号强度',unit:'dBm',color:'#546e7a',cls:'p-grey',ok:v=>v>-80},
+      {key:'count',label:'存栏数',unit:'头',color:'#0288d1',cls:'p-do',ok:()=>true},
+      {key:'alert',label:'越界告警',unit:'次',color:'#d32f2f',cls:'p-nitrite',ok:v=>v<1}
+    ],
+    locPrefix:'牧场',
+    locs:['1号牧场','2号牧场','3号牧场','4号牧场','5号牧场'],
+    data:[{gps:98,btemp:38.5,step:2560,fence:'正常',batt:72,sig:-58,count:128,alert:0},{gps:96,btemp:38.8,step:3120,fence:'正常',batt:65,sig:-62,count:85,alert:1},{gps:99,btemp:38.2,step:1890,fence:'正常',batt:80,sig:-55,count:156,alert:0},{gps:97,btemp:39.0,step:2780,fence:'告警',batt:45,sig:-70,count:72,alert:2},{gps:95,btemp:38.6,step:2200,fence:'正常',batt:55,sig:-65,count:110,alert:0}],
+    devices:[{name:'GPS 耳标 WE-B30',status:'running'},{name:'GPS 追踪器 GT080',status:'running'},{name:'围栏基站 #1',status:'running'},{name:'围栏基站 #2',status:'running'},{name:'气象站',status:'running'},{name:'项圈 #A01',status:'running'},{name:'项圈 #A02',status:'standby'},{name:'网关 WE-C300',status:'running'}],
+    trendTitle:'牧业健康指标趋势',farm:{name:'海南世东牧场',area:'500 亩',stock:'551 头',feed:'草料 2.8t',sensors:'16/16'},
+    alarms:[{level:'p0',name:'2号牧场 · GPS 越界告警',desc:'13:20 · 1头牛离开围栏',badge:'pending',badgeText:'未处理'},{level:'p1',name:'4号牧场 · 耳标低电量',desc:'10:00 · 电量 15%',badge:'resolved',badgeText:'已更换'},{level:'p2',name:'1号牧场 · 围栏基站离线',desc:'昨日 22:00',badge:'resolved',badgeText:'已恢复'}],
+    ctrls:[{name:'围栏基站',status:'运行中',statusCls:'running'},{name:'语音驱赶',status:'待命',statusCls:'standby'},{name:'GPS 追踪',status:'运行中',statusCls:'running'},{name:'电子围栏',status:'已启用',statusCls:'running'},{name:'项圈广播',status:'已关闭',statusCls:'off'},{name:'报警联动',status:'已启用',statusCls:'running'}]
+  }
+};
+
+let currentLoc = 0, currentInd = 0, currentPage = 0;
+let trendChart = null, histChart = null, overlayChart = null, mapInstance = null;
+const IND = IND_DATA;
+
+function updateClock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('zh-CN',{hour12:false}); }
+updateClock(); setInterval(updateClock, 1000);
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+function closeOverlay() { document.getElementById('detailOverlay').classList.remove('open'); }
+
+// SIDEBAR
+const PAGE_TITLES = ['总览仪表盘','水质监测','指标数据池','设备管理','设备控制','视频监控','历史数据','报警中心','设备绑定','数字护照','账号管理'];
+document.querySelectorAll('#sidebarNav a[data-page]').forEach(el => {
+  el.addEventListener('click', function() {
+    document.querySelectorAll('#sidebarNav a').forEach(a => a.classList.remove('active'));
+    this.classList.add('active');
+    currentPage = parseInt(this.dataset.page);
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelector('.page[data-page="'+currentPage+'"]').classList.add('active');
+    document.getElementById('pageTitle').textContent = PAGE_TITLES[currentPage];
+    if (currentPage === 0) refreshDashboard();
+    if (currentPage === 1) refreshWater();
+    if (currentPage === 3) renderDeviceTable();
+    if (currentPage === 4) refreshControl();
+    if (currentPage === 5) refreshVideo();
+    if (currentPage === 6) refreshHist();
+    if (currentPage === 7) renderAlarms();
+    showToast('已切换至: '+PAGE_TITLES[currentPage]);
+  });
+});
+
+// INDUSTRY SWITCH
+document.querySelectorAll('.industry-switch .ind-btn').forEach(el => {
+  el.addEventListener('click', function() {
+    document.querySelectorAll('.industry-switch .ind-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    currentInd = parseInt(this.dataset.ind);
+    currentLoc = 0;
+    if (currentPage === 0) refreshDashboard();
+    else if (currentPage === 1) refreshWater();
+    else if (currentPage === 4) refreshControl();
+    else if (currentPage === 5) refreshVideo();
+    else if (currentPage === 6) refreshHist();
+    showToast('已切换至: '+IND[currentInd].name+'行业');
+  });
+});
+
+// DASHBOARD
+function refreshDashboard() {
+  const ind = IND[currentInd];
+  // Banner
+  document.getElementById('indBanner').style.backgroundImage = 'linear-gradient(135deg,rgba(1,87,155,.7),rgba(2,136,209,.3)), url('+ind.bannerImg+')';
+  document.getElementById('bannerTitle').textContent = ind.bannerTitle;
+  document.getElementById('bannerSub').textContent = ind.bannerSub;
+
+  const locBar = document.getElementById('dashLocBar');
+  locBar.innerHTML = ind.locs.map((l,i) =>
+    `<div class="loc-btn ${i===currentLoc?'active':''}" onclick="switchDashLoc(${i})"><span class="loc-dot"></span>${l}</div>`
+  ).join('');
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="sc-icon blue"> </div><div class="sc-info"><div class="sc-label">${ind.locPrefix}总数</div><div class="sc-value">${ind.locs.length}</div><div class="sc-sub">已激活 ${ind.locs.length}</div></div></div>
+    <div class="stat-card"><div class="sc-icon green"> </div><div class="sc-info"><div class="sc-label">设备在线</div><div class="sc-value">${ind.devices.filter(d=>d.status==='running').length}/${ind.devices.length}</div><div class="sc-sub">在线率 ${Math.round(ind.devices.filter(d=>d.status==='running').length/ind.devices.length*100)}%</div></div></div>
+    <div class="stat-card"><div class="sc-icon orange"> </div><div class="sc-info"><div class="sc-label">今日报警</div><div class="sc-value">${ind.alarms.filter(a=>a.badge==='pending').length}</div><div class="sc-sub">待处理 ${ind.alarms.filter(a=>a.badge==='pending').length}</div></div></div>
+    <div class="stat-card"><div class="sc-icon purple"> </div><div class="sc-info"><div class="sc-label">监测指标</div><div class="sc-value">${ind.params.length}</div><div class="sc-sub">实时监测中</div></div></div>
+  `;
+  renderParams();
+  document.getElementById('trendTitle').innerHTML = ind.trendTitle+' <span class="chip">近24h</span>';
+  updateTrendChart();
+  document.getElementById('dashDevices').innerHTML = ind.devices.slice(0,6).map(d =>
+    `<div class="dev-item" onclick="showToast('查看设备: ${d.name}')"><div class="d-left"><div><div class="d-name">${d.name}</div><div class="d-desc">${ind.name}行业</div></div></div><div class="d-status ${d.status}">${d.status==='running'?'运行中':d.status==='standby'?'待机':'已关闭'}</div></div>`
+  ).join('');
+  const f = ind.farm;
+  document.getElementById('farmInfo').innerHTML = `
+    <div class="info-row"><span class="label">基地名称</span><span class="value">${f.name}</span></div>
+    <div class="info-row"><span class="label">面积</span><span class="value">${f.area}</span></div>
+    ${f.stock !== '—' ? '<div class="info-row"><span class="label">存栏/存塘</span><span class="value">'+f.stock+'</span></div>' : ''}
+    <div class="info-row"><span class="label">今日投喂</span><span class="value">${f.feed}</span></div>
+    <div class="info-row"><span class="label">传感器在线</span><span class="value" style="color:#4caf50;">${f.sensors}</span></div>
+  `;
+  document.getElementById('dashAlarms').innerHTML = ind.alarms.map(a =>
+    `<div class="alarm-item" onclick="showToast('${a.name}')"><div class="a-left"><div class="a-icon ${a.level}"></div><div class="a-info"><div class="a-name">${a.name}</div><div class="a-desc">${a.desc}</div></div></div><span class="a-badge ${a.badge}">${a.badgeText}</span></div>`
+  ).join('');
+  updateMiniMap();
+}
+
+function switchDashLoc(idx) {
+  currentLoc = idx;
+  document.querySelectorAll('#dashLocBar .loc-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
+  renderParams();
+  updateTrendChart();
+  updateMiniMap();
+  showToast('已选择: '+IND[currentInd].locs[idx]);
+}
+
+function renderParams() {
+  const ind = IND[currentInd];
+  const d = ind.data[currentLoc] || ind.data[0];
+  document.getElementById('paramsGrid').innerHTML = ind.params.map(p => {
+    const v = d[p.key];
+    const displayVal = typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(v<10?2:1)) : v;
+    const isOk = p.ok(v);
+    const cls = isOk ? 'ok' : (p.key==='nh3'||p.key==='nitrite'||p.key==='alert'?'crit':'warn');
+    const txt = isOk ? '正常' : (cls==='crit'?'严重':'偏高');
+    return `<div class="param-card ${p.cls}" onclick="openParamDetail('${p.key}')"><div class="p-label">${p.label}</div><div class="p-value">${displayVal}</div><div class="p-unit">${p.unit}</div><div class="p-status ${cls}"><span>${txt}</span></div></div>`;
+  }).join('');
+}
+
+function updateTrendChart() {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  if (trendChart) { trendChart.destroy(); }
+  const ind = IND[currentInd];
+  const times = ['00:00','04:00','08:00','12:00','16:00','20:00'];
+  const p3 = ind.params.slice(0,3);
+  const datasets = p3.map((p,i) => {
+    const base = (currentLoc < ind.data.length ? ind.data[currentLoc][p.key] : ind.data[0][p.key]) || 0;
+    const vals = times.map(() => typeof base === 'number' ? Math.max(0, base + (Math.random()-0.5)*base*0.2) : Number(base)||0);
+    return {
+      label: p.label,
+      data: vals,
+      borderColor: [ind.name==='牧业'?'#4caf50':'#0288d1','#ff7043','#7b1fa2'][i],
+      backgroundColor: 'transparent',
+      borderDash: i===2?[4,4]:[],
+      fill: false, tension: .3, pointRadius: 3, pointBackgroundColor: [ind.name==='牧业'?'#4caf50':'#0288d1','#ff7043','#7b1fa2'][i], borderWidth: 2.5
+    };
+  });
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: times, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position:'top', labels: { color:'#607d8b', boxWidth:12, padding:10, font:{size:11}, usePointStyle:true } } },
+      scales: {
+        x: { ticks: { color:'#90a4ae', font:{size:10} }, grid: { color:'rgba(0,0,0,.04)' } },
+        y: { ticks: { color:'#90a4ae', font:{size:10} }, grid: { color:'rgba(0,0,0,.04)' } }
+      },
+      elements: { line: { tension: .3 } }
+    }
+  });
+}
+
+function updateMiniMap() {
+  if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+  const m = L.map('miniMap', {zoomControl:false, attributionControl:false}).setView([20.0225,110.354], 13);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {maxZoom:18}).addTo(m);
+  mapInstance = m;
+  const bounds = [];
+  const ind = IND[currentInd];
+  const baseLat = 20.02 + currentInd * 0.05;
+  const baseLng = 110.35 + currentInd * 0.03;
+  ind.locs.forEach((l,i) => {
+    const lat = baseLat + i * 0.008;
+    const lng = baseLng + i * 0.006;
+    bounds.push([lat, lng]);
+    L.circleMarker([lat, lng], { radius: 8, color: i===currentLoc?'#0288d1':'#90a4ae', fillColor: i===currentLoc?'#0288d1':'#fff', fillOpacity: .85, weight: 2 })
+      .addTo(m).bindPopup('<b>'+l+'</b><br>'+ind.name+'行业');
+  });
+  if (bounds.length) m.fitBounds(bounds, {padding:[20,20], maxZoom:15});
+  setTimeout(() => m.invalidateSize(), 200);
+}
+
+function openParamDetail(key) {
+  const ind = IND[currentInd];
+  const p = ind.params.find(x => x.key === key);
+  if (!p) return;
+  const d = ind.data[currentLoc] || ind.data[0];
+  const v = d[p.key];
+  document.getElementById('overlayTitle').innerHTML = ' '+p.label+' · '+ind.locs[currentLoc];
+  document.getElementById('overlaySub').textContent = '当前值: '+v+' '+p.unit+' · 行业: '+ind.name;
+  const times = ['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00'];
+  document.querySelector('#overlayTable tbody').innerHTML = times.map((t,i) => {
+    const val = typeof v === 'number' ? Math.max(0, (v + (Math.random()-0.5)*v*0.25)).toFixed(2) : v;
+    return '<tr><td>2026-05-26 '+t+'</td><td>'+val+'</td><td>'+p.unit+'</td><td>'+ind.locs[currentLoc]+'</td><td><span class="tag ok">正常</span></td></tr>';
+  }).join('');
+  setTimeout(() => {
+    const ctx = document.getElementById('overlayChart').getContext('2d');
+    if (overlayChart) { overlayChart.destroy(); }
+    const vals = times.map(() => typeof v === 'number' ? Math.max(0, v + (Math.random()-0.5)*v*0.3) : Number(v)||0);
+    overlayChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: times, datasets: [{ label: p.label, data: vals, borderColor: p.color, backgroundColor: 'transparent', fill: false, tension: .3, pointRadius: 2, borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display:false } }, scales: { x: { ticks: { color:'#90a4ae', font:{size:9}, maxTicksLimit:6 }, grid: { color:'rgba(0,0,0,.03)' } }, y: { ticks: { color:'#90a4ae', font:{size:9} }, grid: { color:'rgba(0,0,0,.03)' } } } }
+    });
+  }, 50);
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+// PAGE 1: 水质监测
+function refreshWater() {
+  const ind = IND[currentInd];
+  document.getElementById('waterLocBar').innerHTML = ind.locs.map((l,i) =>
+    `<div class="loc-btn ${i===currentLoc?'active':''}" onclick="document.querySelectorAll('#waterLocBar .loc-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');currentLoc=${i};refreshWater();showToast('已选择: ${l}')"><span class="loc-dot"></span>${l}</div>`
+  ).join('');
+  const d = ind.data[currentLoc] || ind.data[0];
+  document.getElementById('waterParamList').innerHTML = ind.params.map(p => {
+    const v = d[p.key];
+    const dv = typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(v<10?2:1)) : v;
+    return `<div class="param-card ${p.cls}" style="display:flex;align-items:center;padding:12px 16px;text-align:left;" onclick="openParamDetail('${p.key}')">
+      <div style="flex:1;"><div class="p-label" style="text-align:left;">${p.label}</div><div style="font-size:11px;color:#b0bec5;margin-top:2px;">${p.unit} · ${ind.locs[currentLoc]}</div></div>
+      <div style="text-align:right;"><div class="p-value" style="font-size:22px;text-align:right;">${dv}</div></div>
+    </div>`;
+  }).join('');
+}
+
+// PAGE 3: 设备管理
+function renderDeviceTable() {
+  const ind = IND[currentInd];
+  const sm = {running:'在线', standby:'待机', standBy:'待机', off:'离线', fault:'故障'};
+  const tc = {running:'ok', standby:'warn', standBy:'warn', off:'crit', fault:'crit'};
+  document.getElementById('deviceTableBody').innerHTML = ind.devices.map((d,i) =>
+    '<tr style="cursor:pointer;" onclick="showToast(\'设备详情: '+d.name+'\')"><td>'+d.name+'</td><td>'+(d.status==='running'?'传感器/执行器':'其他')+'</td><td style="font-family:monospace;font-size:11px;">DEV-'+String(i+1).padStart(3,'0')+'</td><td>'+(ind.locs[currentLoc]||ind.locs[0])+'</td><td style="font-family:monospace;font-size:11px;">'+(d.status==='running'?'-58dBm':'N/A')+'</td><td style="font-size:11px;color:#90a4ae;">14:'+String(20+Math.floor(Math.random()*30)).padStart(2,'0')+'</td><td><span class="tag '+(tc[d.status]||'ok')+'">'+(sm[d.status]||d.status)+'</span></td></tr>'
+  ).join('');
+}
+
+// PAGE 4: 设备控制
+function refreshControl() {
+  const ind = IND[currentInd];
+  document.getElementById('ctrlLocBar').innerHTML = ind.locs.map((l,i) =>
+    `<div class="loc-btn ${i===currentLoc?'active':''}" onclick="document.querySelectorAll('#ctrlLocBar .loc-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active');currentLoc=${i};refreshControl();showToast('已选择: ${l}')"><span class="loc-dot"></span>${l}</div>`
+  ).join('');
+  document.getElementById('controlPanels').innerHTML = ind.ctrls.map(c =>
+    `<div class="ctrl-panel"><div class="ch-title"> ${c.name}</div>
+    <div class="ctrl-row"><label>状态</label><span style="color:${c.statusCls==='running'?'#4caf50':'#9e9e9e'};font-weight:500;"> ${c.status}</span></div>
+    <div class="ctrl-row"><label>操作</label>
+      <button class="start" onclick="showToast('${c.name} 已启动')">启动</button>
+      <button class="stop" onclick="showToast('${c.name} 已停止')">停止</button>
+    </div></div>`
+  ).join('');
+  document.getElementById('ctrlLog').innerHTML = [
+    '2026-05-26 14:15 David 启动 '+ind.locs[0]+' 增氧机',
+    '2026-05-26 12:30 系统 自动执行 '+ind.locs[1]+' 灌溉策略',
+    '2026-05-26 10:00 David 停止 '+ind.locs[0]+' 投料机',
+    '2026-05-26 08:15 系统 报警联动启动 '+ind.locs[0]+' 增氧机',
+    '2026-05-25 22:00 李四 修改 '+ind.locs[1]+' 温度阈值'
+  ].map(l => '<div>'+l+'</div>').join('');
+}
+
+// PAGE 5: 视频监控
+function refreshVideo() {
+  const ind = IND[currentInd];
+  const imgs = {
+    0:['https://picsum.photos/seed/aqua1/800/450','https://picsum.photos/seed/aqua2/800/450','https://picsum.photos/seed/aqua3/800/450','https://picsum.photos/seed/aqua4/800/450'],
+    1:['https://picsum.photos/seed/plant1/800/450','https://picsum.photos/seed/plant2/800/450','https://picsum.photos/seed/plant3/800/450','https://picsum.photos/seed/plant4/800/450'],
+    2:['https://picsum.photos/seed/live1/800/450','https://picsum.photos/seed/live2/800/450','https://picsum.photos/seed/live3/800/450','https://picsum.photos/seed/live4/800/450']
+  };
+  const srcs = imgs[currentInd] || imgs[0];
+  const cams = ['全景','东侧','西侧','俯视'];
+  document.getElementById('videoGrid').innerHTML = ind.locs.slice(0,4).map((l,i) =>
+    `<div class="v-box" onclick="showToast('正在打开 ${l} ${cams[i]} 高清实时画面')">
+      <img class="v-img" src="${srcs[i]}" alt="${l}" loading="lazy">
+      <div class="v-label"> ${l} · ${cams[i]}</div>
+    </div>`
+  ).join('');
+  document.getElementById('camList').innerHTML = ind.locs.slice(0,4).map((l,i) =>
+    `<div class="dev-item" onclick="showToast('查看摄像头 ${l}')">
+      <div class="d-left"><div><div class="d-name">IPC-${String(i+1).padStart(2,'0')} · ${l} ${cams[i]}</div><div class="d-desc">${i===3?'离线':'在线'} · 4MP 高清</div></div></div>
+      <div class="d-status ${i===3?'off':'running'}">${i===3?'离线':'在线'}</div>
+    </div>`
+  ).join('');
+}
+
+// PAGE 6: 历史数据
+function refreshHist() {
+  const ind = IND[currentInd];
+  const pondSel = document.getElementById('histPond');
+  pondSel.innerHTML = ind.locs.map((l,i) => '<option '+(i===currentLoc?'selected':'')+'>'+l+'</option>').join('');
+  pondSel.onchange = function() { currentLoc = Array.from(pondSel.options).indexOf(pondSel.selectedOptions[0]); refreshHist(); };
+  document.getElementById('histParam').innerHTML = '<option>全部参数</option>'+ind.params.map(p => '<option>'+p.label+'</option>').join('');
+  refreshHistChart();
+}
+
+function refreshHistChart() {
+  const ind = IND[currentInd];
+  const d = ind.data[currentLoc] || ind.data[0];
+  const labels = ['05-20','05-21','05-22','05-23','05-24','05-25','05-26'];
+  const ctx = document.getElementById('histChart').getContext('2d');
+  if (histChart) { histChart.destroy(); }
+  const datasets = ind.params.slice(0,3).map((p,i) => {
+    const base = d[p.key];
+    const vals = labels.map(() => typeof base === 'number' ? Math.max(0, Number((base + (Math.random()-0.5)*base*0.15).toFixed(2))) : Number((Math.random()*10).toFixed(1)));
+    return { label: p.label, data: vals, borderColor: [ind.name==='牧业'?'#4caf50':'#0288d1','#ff7043','#7b1fa2'][i], backgroundColor: 'transparent', fill: false, tension: .3, pointRadius: 3, borderWidth: 2.5, pointBackgroundColor: '#fff', pointBorderColor: [ind.name==='牧业'?'#4caf50':'#0288d1','#ff7043','#7b1fa2'][i], pointBorderWidth: 2 };
+  });
+  histChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position:'top', labels: { color:'#607d8b', boxWidth:12, font:{size:11}, usePointStyle:true } } }, scales: { x: { ticks: { color:'#90a4ae', font:{size:10} }, grid: { color:'rgba(0,0,0,.04)' } }, y: { ticks: { color:'#90a4ae', font:{size:10} }, grid: { color:'rgba(0,0,0,.04)' } } } }
+  });
+  const param = document.getElementById('histParam').value;
+  const pList = param === '全部参数' ? ind.params : ind.params.filter(p => p.label === param);
+  let rows = '';
+  for (let i = 0; i < 8; i++) {
+    const p = pList[i % pList.length];
+    const base = d[p.key];
+    const val = typeof base === 'number' ? (base + (Math.random()-0.5)*base*0.1).toFixed(2) : base;
+    rows += '<tr><td>2026-05-'+String(19+i).padStart(2,'0')+' 14:00</td><td>'+p.label+'</td><td>'+val+'</td><td>'+ind.locs[currentLoc]+'</td><td><span class="tag ok">正常</span></td></tr>';
+  }
+  document.getElementById('histTableBody').innerHTML = rows;
+}
+
+// PAGE 7: 报警
+function renderAlarms() {
+  const ind = IND[currentInd];
+  document.getElementById('alarmFullList').innerHTML = [
+    ...ind.alarms,
+    {level:'p2',name:ind.locs[1]+' · 传感器离线',desc:'09:00 · 离线超30分钟',badge:'resolved',badgeText:'已恢复'},
+    {level:'p2',name:ind.locs[2]+' · 低电量告警',desc:'昨日 16:00 · 电量 18%',badge:'resolved',badgeText:'已更换'}
+  ].map(a =>
+    '<div class="alarm-item" onclick="showToast(\''+a.name+'\')"><div class="a-left"><div class="a-icon '+a.level+'"></div><div class="a-info"><div class="a-name">'+a.name+'</div><div class="a-desc">'+a.desc+'</div></div></div><span class="a-badge '+a.badge+'">'+a.badgeText+'</span></div>'
+  ).join('');
+}
+
+refreshDashboard();
+renderDeviceTable();
+</script>
+</body>
+</html>
